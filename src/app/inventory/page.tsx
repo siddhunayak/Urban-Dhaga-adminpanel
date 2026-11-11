@@ -1,19 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   Boxes,
   Search,
-  Filter,
   AlertTriangle,
   CheckCircle2,
-  Plus,
-  Minus,
   RefreshCw,
-  Package,
-  Layers,
-  ArrowUpDown,
-  History,
   X,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
@@ -69,8 +63,11 @@ export default function InventoryPage() {
   };
 
   useEffect(() => {
-    fetchInventory();
-  }, [categoryFilter, lowStockOnly]);
+    const timer = setTimeout(() => {
+      fetchInventory();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [categoryFilter, lowStockOnly, search]);
 
   const handleAdjustStock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,12 +86,18 @@ export default function InventoryPage() {
         }),
       });
 
-      if (res.ok) {
-        setModalItem(null);
-        fetchInventory();
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to adjust stock");
+        return;
       }
+
+      toast.success(`Updated ${modalItem.sku}: now ${data.currentStock} pcs`);
+      setModalItem(null);
+      fetchInventory();
     } catch (err) {
       console.error(err);
+      toast.error("Network error adjusting stock");
     } finally {
       setAdjusting(false);
     }
@@ -434,3 +437,4 @@ export default function InventoryPage() {
     </div>
   );
 }
+

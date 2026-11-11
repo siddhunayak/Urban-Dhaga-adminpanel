@@ -1,15 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Search, Plus, Sparkles, FileText, UserPlus } from "lucide-react";
+import { Search, Plus, UserPlus } from "lucide-react";
 import Link from "next/link";
 
 interface HeaderProps {
   onOpenCommand?: () => void;
-  onOpenNewLead?: () => void;
 }
 
-export function Header({ onOpenCommand, onOpenNewLead }: HeaderProps) {
+export function Header({ onOpenCommand }: HeaderProps) {
   const pathname = usePathname();
 
   const getBreadcrumb = () => {
@@ -20,12 +19,13 @@ export function Header({ onOpenCommand, onOpenNewLead }: HeaderProps) {
     if (pathname.startsWith("/inventory")) return "Stock & Inventory";
     if (pathname.startsWith("/customers")) return "Corporate Clients";
     if (pathname.startsWith("/vendors")) return "Vendors & Workshops";
+    if (pathname.startsWith("/invoices")) return "Invoices & Payments";
+    if (pathname.startsWith("/team")) return "Team & Audit Log";
     return "Operations Dashboard";
   };
 
   return (
     <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur sticky top-0 z-20 flex items-center justify-between px-6">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-zinc-400 font-mono">Urban Dhaga</span>
         <span className="text-zinc-300 dark:text-zinc-700">/</span>
@@ -34,10 +34,9 @@ export function Header({ onOpenCommand, onOpenNewLead }: HeaderProps) {
         </span>
       </div>
 
-      {/* Right Controls */}
       <div className="flex items-center gap-3">
-        {/* Command Bar Trigger */}
         <button
+          type="button"
           onClick={onOpenCommand}
           className="flex items-center gap-3 px-3 py-1.5 text-xs text-zinc-500 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors group"
         >
@@ -50,17 +49,14 @@ export function Header({ onOpenCommand, onOpenNewLead }: HeaderProps) {
           </kbd>
         </button>
 
-        {/* Quick Actions */}
         <div className="flex items-center gap-2">
-          {onOpenNewLead && (
-            <button
-              onClick={onOpenNewLead}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-850 rounded-lg transition-colors"
-            >
-              <UserPlus className="w-3.5 h-3.5 text-zinc-500" />
-              <span>New Lead</span>
-            </button>
-          )}
+          <Link
+            href="/leads?new=1"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-850 rounded-lg transition-colors"
+          >
+            <UserPlus className="w-3.5 h-3.5 text-zinc-500" />
+            <span>New Lead</span>
+          </Link>
 
           <Link
             href="/quotes/new"

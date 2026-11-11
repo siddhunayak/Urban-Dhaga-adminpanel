@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   Factory,
   Kanban,
@@ -8,7 +9,6 @@ import {
   Search,
   Filter,
   CheckCircle2,
-  AlertCircle,
   Truck,
   Clock,
   ShieldCheck,
@@ -17,11 +17,9 @@ import {
   ChevronRight,
   ChevronLeft,
   RefreshCw,
-  PackageCheck,
-  Building2,
-  Phone,
-  Calendar,
-  AlertTriangle,
+  Image as ImageIcon,
+  IndianRupee,
+  Plus,
 } from "lucide-react";
 import { formatCurrency, formatDate, ORDER_STAGES } from "@/lib/utils";
 import { generateJobSheetPDF } from "@/lib/pdf-generator";
@@ -62,6 +60,16 @@ interface ShipmentDetails {
   trackingUrl?: string | null;
 }
 
+interface OrderMockup {
+  id: string;
+  title: string;
+  fileUrl: string;
+  version: number;
+  approvalStatus: string;
+  clientFeedback?: string | null;
+  uploadedAt: string;
+}
+
 interface Order {
   id: string;
   orderNumber: string;
@@ -82,6 +90,7 @@ interface Order {
   notes?: string | null;
   createdAt: string;
   items: OrderItem[];
+  mockups?: OrderMockup[];
   qualityCheck?: QualityCheck | null;
   shipment?: ShipmentDetails | null;
 }
@@ -128,6 +137,13 @@ export default function ProductionPage() {
   });
   const [savingShipment, setSavingShipment] = useState(false);
 
+  // Payment & Mockup states
+  const [paymentInput, setPaymentInput] = useState(0);
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [mockupTitle, setMockupTitle] = useState("");
+  const [mockupUrl, setMockupUrl] = useState("");
+  const [savingMockup, setSavingMockup] = useState(false);
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -152,11 +168,15 @@ export default function ProductionPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, [stageFilter, priorityFilter]);
+    const timer = setTimeout(() => {
+      fetchOrders();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [stageFilter, priorityFilter, search]);
 
   const handleOpenDetail = (ord: Order) => {
     setSelectedOrder(ord);
+    setPaymentInput(ord.advancePaid || 0);
     if (ord.qualityCheck) {
       setQcState({
         fabric: ord.qualityCheck.fabricQualityChecked,
@@ -166,6 +186,16 @@ export default function ProductionPage() {
         packaging: ord.qualityCheck.packagingChecked,
         inspectedBy: ord.qualityCheck.inspectedBy || "Vikram Rathore (QC Master)",
         remarks: ord.qualityCheck.remarks || "",
+      });
+    } else {
+      setQcState({
+        fabric: false,
+        print: false,
+        color: false,
+        stitching: false,
+        packaging: false,
+        inspectedBy: "Vikram Rathore (QC Master)",
+        remarks: "",
       });
     }
     if (ord.shipment) {
@@ -195,12 +225,103 @@ export default function ProductionPage() {
     const nextStage = STAGE_ORDER[nextIndex];
 
     try {
-      await fetch(`/api/orders/${orderId}`, {
+      const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage: nextStage }),
       });
+      if (!res.ok) {
+        toast.error("Failed to update order stage");
+        return;
+      }
+      toast.success(`Moved to ${ORDER_STAGES[nextStage]?.label || nextStage}`);
       fetchOrders();
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error updating stage");
+    }
+  };
+
+  const handlePriorityChange = async (orderId: string, priority: string) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priority }),
+      });
+      if (res.ok) {
+        toast.success(`Priority marked as ${priority}`);
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRecordPayment = async () => {
+    if (!selectedOrder) return;
+    try {
+      setSavingPayment(true);
+      const res = await fetch(`/api/orders/${selectedOrder.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ advancePaid: paymentInput }),
+      });
+      if (!res.ok) {
+        toast.error("Failed to record payment");
+        return;
+      }
+      toast.success("Payment ledger updated");
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error updating payment");
+    } finally {
+      setSavingPayment(false);
+    }
+  };
+
+  const handleAddMockup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder || !mockupTitle.trim()) return;
+    try {
+      setSavingMockup(true);
+      const res = await fetch(`/api/orders/${selectedOrder.id}/mockups`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: mockupTitle, fileUrl: mockupUrl }),
+      });
+      if (!res.ok) {
+        toast.error("Failed to add artwork mockup");
+        return;
+      }
+      toast.success("Artwork proof added");
+      setMockupTitle("");
+      setMockupUrl("");
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingMockup(false);
+    }
+  };
+
+  const handleMockupDecision = async (mockupId: string, approvalStatus: string) => {
+    if (!selectedOrder) return;
+    try {
+      const res = await fetch(`/api/orders/${selectedOrder.id}/mockups`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mockupId,
+          approvalStatus,
+          autoAdvanceStage: approvalStatus === "APPROVED",
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Mockup marked ${approvalStatus}`);
+        fetchOrders();
+      }
     } catch (err) {
       console.error(err);
     }
@@ -224,11 +345,20 @@ export default function ProductionPage() {
           autoAdvanceStage: true,
         }),
       });
-      if (res.ok) {
-        fetchOrders();
+      if (!res.ok) {
+        toast.error("Failed to save QC audit");
+        return;
       }
+      const saved = await res.json();
+      toast.success(
+        saved.passed
+          ? "5-Point QC Passed! Order ready for dispatch."
+          : "QC inspection checklist saved"
+      );
+      fetchOrders();
     } catch (err) {
       console.error(err);
+      toast.error("Network error saving QC");
     } finally {
       setSavingQc(false);
     }
@@ -236,6 +366,10 @@ export default function ProductionPage() {
 
   const handleSaveShipment = async () => {
     if (!selectedOrder) return;
+    if (!shipmentState.trackingNumber.trim()) {
+      toast.error("AWB / Tracking number is required");
+      return;
+    }
     try {
       setSavingShipment(true);
       const res = await fetch(`/api/orders/${selectedOrder.id}/shipment`, {
@@ -250,11 +384,15 @@ export default function ProductionPage() {
           advanceStage: true,
         }),
       });
-      if (res.ok) {
-        fetchOrders();
+      if (!res.ok) {
+        toast.error("Failed to book shipment");
+        return;
       }
+      toast.success(`Dispatched via ${shipmentState.courierPartner}`);
+      fetchOrders();
     } catch (err) {
       console.error(err);
+      toast.error("Network error booking shipment");
     } finally {
       setSavingShipment(false);
     }
@@ -274,6 +412,7 @@ export default function ProductionPage() {
       notes: ord.notes,
     });
     doc.save(`${ord.jobSheetNumber || ord.orderNumber}_JobSheet.pdf`);
+    toast.success(`Job Sheet PDF downloaded for ${ord.orderNumber}`);
   };
 
   return (
@@ -610,7 +749,7 @@ export default function ProductionPage() {
             {/* Drawer Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Stage Stepper Banner */}
-              <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-between text-xs">
+              <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div>
                   <span className="text-zinc-500 text-[10px] uppercase font-mono block">Current Stage</span>
                   <span className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
@@ -619,6 +758,15 @@ export default function ProductionPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <select
+                    value={selectedOrder.priority}
+                    onChange={(e) => handlePriorityChange(selectedOrder.id, e.target.value)}
+                    className="px-2 py-1 text-xs font-mono bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded"
+                  >
+                    <option value="NORMAL">Normal</option>
+                    <option value="HIGH">High Priority</option>
+                    <option value="URGENT">Urgent</option>
+                  </select>
                   <button
                     onClick={() => handleAdvanceStage(selectedOrder.id, selectedOrder.stage, -1)}
                     className="px-2.5 py-1 text-xs bg-white dark:bg-zinc-700 rounded border border-zinc-200 dark:border-zinc-600 hover:bg-zinc-50"
@@ -630,6 +778,70 @@ export default function ProductionPage() {
                     className="px-3 py-1 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded shadow-xs"
                   >
                     Advance Next Stage →
+                  </button>
+                </div>
+              </div>
+
+              {/* Payment Reconciliation Card */}
+              <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-850 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <IndianRupee className="w-4 h-4 text-emerald-600" />
+                    <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                      Payment & Receivables Status
+                    </h3>
+                  </div>
+                  <span
+                    className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+                      selectedOrder.paymentStatus === "FULLY_PAID"
+                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                        : selectedOrder.paymentStatus === "PARTIAL_PAID"
+                        ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                        : "bg-red-500/10 text-red-600 border-red-500/20"
+                    }`}
+                  >
+                    {selectedOrder.paymentStatus}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+                  <div className="p-2 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 block">Order Total</span>
+                    <strong>{formatCurrency(selectedOrder.totalAmount)}</strong>
+                  </div>
+                  <div className="p-2 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 block">Collected</span>
+                    <strong className="text-emerald-600">{formatCurrency(selectedOrder.advancePaid)}</strong>
+                  </div>
+                  <div className="p-2 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 block">Balance Due</span>
+                    <strong className="text-amber-600">{formatCurrency(selectedOrder.balanceDue)}</strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs">
+                  <input
+                    type="number"
+                    min="0"
+                    max={selectedOrder.totalAmount}
+                    value={paymentInput}
+                    onChange={(e) => setPaymentInput(Number(e.target.value))}
+                    className="flex-1 px-2.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPaymentInput(selectedOrder.totalAmount)}
+                    className="px-2.5 py-1.5 text-[11px] font-mono bg-zinc-200 dark:bg-zinc-700 rounded-lg hover:bg-zinc-300"
+                  >
+                    Full Amount
+                  </button>
+                  <button
+                    type="button"
+                    disabled={savingPayment}
+                    onClick={handleRecordPayment}
+                    className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg"
+                  >
+                    {savingPayment ? "Saving..." : "Update Payment"}
                   </button>
                 </div>
               </div>
@@ -668,7 +880,7 @@ export default function ProductionPage() {
                       </div>
 
                       {Object.keys(sizes).length > 0 && (
-                        <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
                           <span className="text-[10px] text-zinc-400 font-mono">Sizes:</span>
                           {Object.entries(sizes).map(([s, count]) => (
                             <span
@@ -683,6 +895,87 @@ export default function ProductionPage() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Mockups & Artwork Approvals */}
+              <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-purple-600" />
+                    <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                      Design Mockups & Client Artwork Proofs
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-zinc-400">
+                    {selectedOrder.mockups?.length || 0} versions
+                  </span>
+                </div>
+
+                {selectedOrder.mockups && selectedOrder.mockups.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedOrder.mockups.map((m) => (
+                      <div
+                        key={m.id}
+                        className="p-2.5 rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-850 flex items-center justify-between gap-2 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+                            v{m.version} • {m.title}
+                          </div>
+                          {m.clientFeedback && (
+                            <div className="text-[11px] text-zinc-500 truncate">{m.clientFeedback}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {m.approvalStatus === "APPROVED" ? (
+                            <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                              APPROVED
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleMockupDecision(m.id, "APPROVED")}
+                                className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMockupDecision(m.id, "REVISIONS_REQUESTED")}
+                                className="px-2 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded"
+                              >
+                                Revise
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-zinc-400 font-mono">
+                    No artwork proofs uploaded yet.
+                  </div>
+                )}
+
+                <form onSubmit={handleAddMockup} className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Add proof version title (e.g. Chest Print Proof v1)..."
+                    value={mockupTitle}
+                    onChange={(e) => setMockupTitle(e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                  />
+                  <button
+                    type="submit"
+                    disabled={savingMockup || !mockupTitle.trim()}
+                    className="px-3 py-1.5 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg inline-flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Proof</span>
+                  </button>
+                </form>
               </div>
 
               {/* Mandatory 5-Point Quality Check Checklist */}
@@ -833,3 +1126,4 @@ export default function ProductionPage() {
     </div>
   );
 }
+

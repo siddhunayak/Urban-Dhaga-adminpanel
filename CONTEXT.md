@@ -26,3 +26,4 @@
 2. **Sales / Account Manager**: Manages leads, customers, quotation creation, and client follow-ups.
 3. **Production / Ops Head**: Manages job sheets, stock allocation, QC checklists, vendor assignments, and dispatch.
 4. **Accounts / Billing**: Invoices, GST reports, payment reconciliations.
+

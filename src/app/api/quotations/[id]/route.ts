@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { generateNextOrderNumbers } from "@/lib/sequence";
 
 export async function GET(
   request: Request,
@@ -37,7 +38,7 @@ export async function PATCH(
 
     const existing = await prisma.quotation.findUnique({
       where: { id },
-      include: { items: true },
+      include: { items: true, order: true },
     });
 
     if (!existing) {
@@ -46,11 +47,16 @@ export async function PATCH(
 
     // Check if converting to Order
     if (body.action === "CONVERT_TO_ORDER") {
-      const orderCount = await prisma.order.count();
-      const orderNumber = `UD-ORD-2026-${String(19 + orderCount).padStart(4, "0")}`;
-      const jobSheetNumber = `JS-2026-${String(90 + orderCount).padStart(4, "0")}`;
+      if (existing.order) {
+        return NextResponse.json(
+          { error: `Quotation already converted to order ${existing.order.orderNumber}` },
+          { status: 409 }
+        );
+      }
 
-      const advancePaid = (existing.grandTotal * existing.advanceRequiredPercent) / 100;
+      const { orderNumber, jobSheetNumber } = await generateNextOrderNumbers();
+
+      const advancePaid = Math.round((existing.grandTotal * existing.advanceRequiredPercent) / 100);
       const balanceDue = existing.grandTotal - advancePaid;
 
       const order = await prisma.order.create({
@@ -107,6 +113,16 @@ export async function PATCH(
         data: { status: "ACCEPTED" },
       });
 
+      if (existing.customerId) {
+        await prisma.customer.update({
+          where: { id: existing.customerId },
+          data: {
+            totalOrders: { increment: 1 },
+            totalSpend: { increment: existing.grandTotal },
+          },
+        });
+      }
+
       await prisma.activityLog.create({
         data: {
           entityType: "ORDER",
@@ -154,6 +170,19 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const existing = await prisma.quotation.findUnique({
+      where: { id },
+      include: { order: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
+    }
+    if (existing.order) {
+      return NextResponse.json(
+        { error: "Cannot delete quotation that is already converted to an order" },
+        { status: 400 }
+      );
+    }
     await prisma.quotation.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -161,3 +190,4 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete quotation" }, { status: 500 });
   }
 }
+

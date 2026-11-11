@@ -431,3 +431,4 @@ export function generateJobSheetPDF(data: JobSheetPDFData): jsPDF {
 
   return doc;
 }
+

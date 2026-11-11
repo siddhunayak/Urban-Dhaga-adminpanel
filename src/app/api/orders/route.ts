@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { generateNextOrderNumbers } from "@/lib/sequence";
 
 export async function GET(request: Request) {
   try {
@@ -45,12 +46,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const count = await prisma.order.count();
-    const orderNumber = `UD-ORD-2026-${String(19 + count).padStart(4, "0")}`;
-    const jobSheetNumber = `JS-2026-${String(90 + count).padStart(4, "0")}`;
+    if (!body.companyName || !body.contactPerson) {
+      return NextResponse.json(
+        { error: "Company name and contact person are required" },
+        { status: 400 }
+      );
+    }
+
+    const { orderNumber, jobSheetNumber } = await generateNextOrderNumbers();
 
     const items = body.items || [];
-    let totalAmount = 0;
+    let calculatedTotal = 0;
 
     const formattedItems = items.map((it: {
       productName: string;
@@ -63,7 +69,7 @@ export async function POST(request: Request) {
       const qty = Number(it.quantity) || 1;
       const unitPrice = Number(it.unitPrice) || 0;
       const lineTotal = qty * unitPrice;
-      totalAmount += lineTotal;
+      calculatedTotal += lineTotal;
 
       return {
         productName: it.productName,
@@ -76,24 +82,25 @@ export async function POST(request: Request) {
       };
     });
 
+    const totalAmount = Number(body.totalAmount) || calculatedTotal;
     const advancePaid = Number(body.advancePaid) || 0;
-    const balanceDue = totalAmount - advancePaid;
+    const balanceDue = Math.max(0, totalAmount - advancePaid);
 
     const order = await prisma.order.create({
       data: {
         orderNumber,
-        companyName: body.companyName,
-        contactPerson: body.contactPerson,
-        contactEmail: body.contactEmail,
-        contactPhone: body.contactPhone,
+        companyName: body.companyName.trim(),
+        contactPerson: body.contactPerson.trim(),
+        contactEmail: body.contactEmail?.trim() || "orders@urbandhaga.com",
+        contactPhone: body.contactPhone?.trim() || "—",
         shippingAddress: body.shippingAddress || "Bangalore, India",
         stage: body.stage || "ORDER_CONFIRMED",
         priority: body.priority || "NORMAL",
         targetDeliveryDate: new Date(body.targetDeliveryDate || Date.now() + 10 * 24 * 60 * 60 * 1000),
-        totalAmount: Number(body.totalAmount) || totalAmount,
+        totalAmount,
         advancePaid,
         balanceDue,
-        paymentStatus: advancePaid >= totalAmount ? "FULLY_PAID" : advancePaid > 0 ? "PARTIAL_PAID" : "PENDING",
+        paymentStatus: advancePaid >= totalAmount && totalAmount > 0 ? "FULLY_PAID" : advancePaid > 0 ? "PARTIAL_PAID" : "PENDING",
         jobSheetNumber,
         notes: body.notes || null,
         items: {
@@ -134,3 +141,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
   }
 }
+

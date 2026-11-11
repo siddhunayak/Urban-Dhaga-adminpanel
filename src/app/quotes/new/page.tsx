@@ -3,15 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Plus,
   Trash2,
   FileDown,
-  Sparkles,
   Calculator,
   Building2,
-  Check,
   Package,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
@@ -102,7 +101,13 @@ export default function NewQuotationPage() {
   ]);
 
   useEffect(() => {
-    // Fetch customers & products
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("companyName")) setCompanyName(params.get("companyName") || "");
+    if (params.get("customerName")) setCustomerName(params.get("customerName") || "");
+    if (params.get("clientEmail")) setClientEmail(params.get("clientEmail") || "");
+    if (params.get("clientPhone")) setClientPhone(params.get("clientPhone") || "");
+    if (params.get("notes")) setNotes(params.get("notes") || "");
+
     fetch("/api/customers")
       .then((r) => r.json())
       .then((data) => setCustomers(data))
@@ -110,7 +115,29 @@ export default function NewQuotationPage() {
 
     fetch("/api/products")
       .then((r) => r.json())
-      .then((data) => setProducts(data))
+      .then((data: ProductOption[]) => {
+        setProducts(data);
+        if (Array.isArray(data) && data.length > 0) {
+          const defaultProd = data.find((p) => p.sku === "UD-TSH-001") || data[0];
+          setItems((prev) => {
+            if (prev.length === 1 && !prev[0].productId) {
+              const basePrice = getTierPrice(defaultProd, prev[0].quantity);
+              const unitPrice = basePrice + prev[0].customizationCost;
+              return [
+                {
+                  ...prev[0],
+                  productId: defaultProd.id,
+                  productTitle: defaultProd.name,
+                  baseUnitPrice: basePrice,
+                  unitPrice,
+                  lineTotal: unitPrice * prev[0].quantity,
+                },
+              ];
+            }
+            return prev;
+          });
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -299,11 +326,12 @@ export default function NewQuotationPage() {
       notes,
     });
     doc.save(`Estimate_Draft_${companyName.replace(/\s+/g, "_") || "UrbanDhaga"}.pdf`);
+    toast.success("Draft PDF estimate downloaded");
   };
 
   const handleSubmit = async (status: "DRAFT" | "SENT") => {
-    if (!companyName || !customerName) {
-      alert("Please provide client company and contact name.");
+    if (!companyName.trim() || !customerName.trim()) {
+      toast.error("Please provide client company and contact name.");
       return;
     }
 
@@ -342,11 +370,17 @@ export default function NewQuotationPage() {
         }),
       });
 
-      if (res.ok) {
-        router.push("/quotes");
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to save quotation");
+        return;
       }
+
+      toast.success(`Quotation ${data.quoteNumber} ${status === "SENT" ? "issued" : "saved as draft"}`);
+      router.push("/quotes");
     } catch (err) {
       console.error(err);
+      toast.error("Network error saving quotation");
     } finally {
       setSubmitting(false);
     }
@@ -579,11 +613,19 @@ export default function NewQuotationPage() {
                   <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
                     <div className="flex items-center justify-between text-xs mb-2">
                       <span className="font-medium text-zinc-600 dark:text-zinc-400">
-                        Size Distribution Breakdown
+                        Size Distribution Breakdown (or Direct Total)
                       </span>
-                      <span className="font-mono text-zinc-900 dark:text-zinc-100 font-bold">
-                        Batch Quantity: {item.quantity} units
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-500">Batch Qty:</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => handleQuantityChange(idx, Number(e.target.value))}
+                          className="w-20 text-center px-2 py-1 text-xs font-mono font-bold bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md focus:ring-1 focus:ring-orange-500"
+                        />
+                        <span className="font-mono text-zinc-500">units</span>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-5 gap-2">
@@ -631,15 +673,27 @@ export default function NewQuotationPage() {
             </h3>
 
             <div className="space-y-3 text-xs">
-              <div>
-                <label className="text-zinc-500 font-medium">Turnaround Timeline (Days)</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={estimatedDays}
-                  onChange={(e) => setEstimatedDays(Number(e.target.value))}
-                  className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-zinc-500 font-medium">Turnaround (Days)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={estimatedDays}
+                    onChange={(e) => setEstimatedDays(Number(e.target.value))}
+                    className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-zinc-500 font-medium">Quote Valid (Days)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={validDays}
+                    onChange={(e) => setValidDays(Number(e.target.value))}
+                    className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono"
+                  />
+                </div>
               </div>
 
               <div>
@@ -740,3 +794,4 @@ export default function NewQuotationPage() {
     </div>
   );
 }
+

@@ -102,3 +102,4 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Failed to update inventory" }, { status: 500 });
   }
 }
+

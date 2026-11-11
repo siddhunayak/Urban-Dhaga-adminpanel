@@ -258,3 +258,4 @@ model ActivityLog {
   performedBy String   @default("Admin")
   createdAt   DateTime @default(now())
 }
+

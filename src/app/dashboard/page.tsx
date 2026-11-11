@@ -2,19 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   TrendingUp,
   AlertTriangle,
   Factory,
-  FileSpreadsheet,
   ArrowUpRight,
-  Package,
   Clock,
   CheckCircle2,
-  Truck,
   Plus,
   RefreshCw,
-  ExternalLink,
+  Activity,
 } from "lucide-react";
 import {
   AreaChart,
@@ -26,7 +24,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { formatCurrency, formatDate, ORDER_STAGES } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime, ORDER_STAGES } from "@/lib/utils";
 
 interface DashboardData {
   metrics: {
@@ -106,7 +104,7 @@ export default function DashboardPage() {
     if (!restockModal) return;
     try {
       setRestocking(true);
-      await fetch("/api/inventory", {
+      const res = await fetch("/api/inventory", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,10 +114,17 @@ export default function DashboardPage() {
           notes: "Quick restock from Dashboard",
         }),
       });
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Failed to update stock");
+        return;
+      }
+      toast.success(`Inwarded +${restockQty} units for ${restockModal.sku}`);
       setRestockModal(null);
       fetchStats();
     } catch (err) {
       console.error(err);
+      toast.error("Network error updating stock");
     } finally {
       setRestocking(false);
     }
@@ -497,7 +502,43 @@ export default function DashboardPage() {
                 </div>
               </div>
             ))}
+            {(!data?.lowStockItems || data.lowStockItems.length === 0) && (
+              <div className="p-6 text-center text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border border-emerald-500/20 rounded-lg font-mono">
+                All SKU inventory buffers are healthy. Zero shortages detected.
+              </div>
+            )}
           </div>
+        </div>
+      </div>
+
+      {/* Live Operations Activity Feed */}
+      <div className="p-5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-orange-600" />
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Operations Audit Stream
+            </h3>
+          </div>
+          <span className="text-[11px] font-mono text-zinc-400">
+            Latest {data?.recentActivities?.length || 0} events
+          </span>
+        </div>
+
+        <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          {data?.recentActivities?.map((act) => (
+            <div key={act.id} className="py-2.5 flex items-center justify-between gap-4 text-xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 shrink-0">
+                  {act.entityType}
+                </span>
+                <span className="text-zinc-800 dark:text-zinc-200 truncate">{act.description}</span>
+              </div>
+              <div className="text-[11px] font-mono text-zinc-400 shrink-0">
+                {act.performedBy} • {formatDateTime(act.createdAt)}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -562,3 +603,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

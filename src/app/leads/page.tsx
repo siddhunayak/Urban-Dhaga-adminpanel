@@ -2,24 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   Inbox,
   Plus,
   Search,
-  Filter,
-  Building2,
-  Calendar,
-  Clock,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle2,
-  XCircle,
   FileSpreadsheet,
   X,
-  Phone,
-  Mail,
   RefreshCw,
-  Sparkles,
 } from "lucide-react";
 import { formatCurrency, formatDate, LEAD_STAGES } from "@/lib/utils";
 
@@ -96,19 +86,35 @@ export default function LeadsPage() {
   };
 
   useEffect(() => {
-    fetchLeads();
-  }, [stageFilter]);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("new") === "1") {
+      setShowAddModal(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchLeads();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [stageFilter, search]);
 
   const handleUpdateStage = async (leadId: string, nextStage: string) => {
     try {
-      await fetch(`/api/leads/${leadId}`, {
+      const res = await fetch(`/api/leads/${leadId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage: nextStage }),
       });
+      if (!res.ok) {
+        toast.error("Failed to update lead stage");
+        return;
+      }
+      toast.success(`Lead moved to ${LEAD_STAGES[nextStage]?.label || nextStage}`);
       fetchLeads();
     } catch (err) {
       console.error(err);
+      toast.error("Network error updating lead");
     }
   };
 
@@ -122,12 +128,33 @@ export default function LeadsPage() {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        setShowAddModal(false);
-        fetchLeads();
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to register lead");
+        return;
       }
+
+      toast.success(`Inquiry ${data.leadNumber} registered`);
+      setShowAddModal(false);
+      setFormData({
+        companyName: "",
+        contactPerson: "",
+        email: "",
+        phone: "",
+        city: "Bangalore",
+        requirement: "",
+        category: "APPAREL",
+        estimatedQuantity: 200,
+        estimatedBudget: 90000,
+        targetDate: "",
+        source: "WEBSITE",
+        notes: "",
+        assignedTo: "Pooja Nair",
+      });
+      fetchLeads();
     } catch (err) {
       console.error(err);
+      toast.error("Network error creating lead");
     } finally {
       setSaving(false);
     }
@@ -321,7 +348,7 @@ export default function LeadsPage() {
 
                       <td className="px-4 py-3.5 text-right whitespace-nowrap">
                         <Link
-                          href="/quotes/new"
+                          href={`/quotes/new?companyName=${encodeURIComponent(lead.companyName)}&customerName=${encodeURIComponent(lead.contactPerson)}&clientEmail=${encodeURIComponent(lead.email)}&clientPhone=${encodeURIComponent(lead.phone)}&notes=${encodeURIComponent(lead.requirement)}`}
                           className="px-2.5 py-1 text-[11px] font-semibold text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-md inline-flex items-center gap-1 transition-colors"
                         >
                           <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -485,3 +512,4 @@ export default function LeadsPage() {
     </div>
   );
 }
+

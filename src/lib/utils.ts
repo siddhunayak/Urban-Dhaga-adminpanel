@@ -73,3 +73,4 @@ export const QUOTE_STATUS: { [key: string]: { label: string; badge: string } } =
   REJECTED: { label: "Declined", badge: "bg-red-500/10 text-red-600 border-red-500/20" },
   EXPIRED: { label: "Expired", badge: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
 };
+

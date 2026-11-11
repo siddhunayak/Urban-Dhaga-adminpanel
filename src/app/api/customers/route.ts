@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { generateNextCustomerCode } from "@/lib/sequence";
 
 export async function GET(request: Request) {
   try {
@@ -36,17 +37,23 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const count = await prisma.customer.count();
-    const customerCode = `UD-CUST-${105 + count}`;
+    if (!body.companyName || !body.contactPerson || !body.email || !body.phone) {
+      return NextResponse.json(
+        { error: "Company name, contact person, email, and phone are required" },
+        { status: 400 }
+      );
+    }
+
+    const customerCode = await generateNextCustomerCode();
 
     const customer = await prisma.customer.create({
       data: {
         customerCode,
-        companyName: body.companyName,
-        contactPerson: body.contactPerson,
-        email: body.email,
-        phone: body.phone,
-        gstin: body.gstin || null,
+        companyName: body.companyName.trim(),
+        contactPerson: body.contactPerson.trim(),
+        email: body.email.trim(),
+        phone: body.phone.trim(),
+        gstin: body.gstin ? body.gstin.trim().toUpperCase() : null,
         address: body.address || null,
         city: body.city || null,
         state: body.state || "Karnataka",
@@ -61,3 +68,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create customer" }, { status: 500 });
   }
 }
+

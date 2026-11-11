@@ -1,20 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   Package,
   Plus,
   Search,
-  Filter,
-  Layers,
-  Sparkles,
-  ArrowRight,
-  TrendingDown,
-  Tag,
   Clock,
-  Shirt,
   X,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -97,13 +92,23 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [categoryFilter]);
+    const timer = setTimeout(() => {
+      fetchProducts();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [categoryFilter, search]);
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setSaving(true);
+      const base = Number(formData.basePrice) || 450;
+      const computedTiers = [
+        { minQty: 50, maxQty: 99, unitPrice: base },
+        { minQty: 100, maxQty: 299, unitPrice: Math.round(base * 0.88) },
+        { minQty: 300, maxQty: null, unitPrice: Math.round(base * 0.78) },
+      ];
+
       const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,12 +117,12 @@ export default function ProductsPage() {
           name: formData.name,
           category: formData.category,
           description: formData.description,
-          basePrice: Number(formData.basePrice),
+          basePrice: base,
           gstRate: Number(formData.gstRate),
           hsnCode: formData.hsnCode,
           material: formData.material,
           leadTimeDays: Number(formData.leadTimeDays),
-          pricingTiers: formData.tiers,
+          pricingTiers: computedTiers,
           variants: [
             { sku: `${formData.sku}-BLK-M`, size: "M", color: "Jet Black", colorHex: "#111827", currentStock: 100, lowStockThreshold: 25 },
             { sku: `${formData.sku}-BLK-L`, size: "L", color: "Jet Black", colorHex: "#111827", currentStock: 120, lowStockThreshold: 25 },
@@ -127,14 +132,41 @@ export default function ProductsPage() {
         }),
       });
 
-      if (res.ok) {
-        setShowAddModal(false);
-        fetchProducts();
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to add catalog item");
+        return;
       }
+
+      toast.success(`Added ${data.name} (${data.sku}) to catalog`);
+      setShowAddModal(false);
+      setFormData((prev) => ({
+        ...prev,
+        sku: `UD-${Math.floor(100 + Math.random() * 900)}`,
+        name: "",
+        description: "",
+      }));
+      fetchProducts();
     } catch (err) {
       console.error(err);
+      toast.error("Network error creating product");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleArchiveProduct = async (productId: string, name: string) => {
+    try {
+      const res = await fetch(`/api/products/${productId}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error("Failed to archive product");
+        return;
+      }
+      toast.success(`Archived ${name}`);
+      setSelectedProduct(null);
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -372,7 +404,15 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-between items-center pt-2">
+              <button
+                type="button"
+                onClick={() => handleArchiveProduct(selectedProduct.id, selectedProduct.name)}
+                className="px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-500/10 rounded-lg inline-flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Archive Item</span>
+              </button>
               <button
                 onClick={() => setSelectedProduct(null)}
                 className="px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded-lg"
@@ -496,3 +536,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+

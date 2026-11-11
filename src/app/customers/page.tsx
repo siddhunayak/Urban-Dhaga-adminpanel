@@ -1,20 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   Building2,
   Plus,
   Search,
-  Phone,
-  Mail,
-  MapPin,
-  FileSpreadsheet,
-  CheckCircle2,
   X,
   RefreshCw,
-  TrendingUp,
 } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 
 interface Customer {
   id: string;
@@ -71,8 +66,11 @@ export default function CustomersPage() {
   };
 
   useEffect(() => {
-    fetchCustomers();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchCustomers();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,12 +82,30 @@ export default function CustomersPage() {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        setShowAddModal(false);
-        fetchCustomers();
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to register client");
+        return;
       }
+
+      toast.success(`Registered ${data.companyName} (${data.customerCode})`);
+      setShowAddModal(false);
+      setFormData({
+        companyName: "",
+        contactPerson: "",
+        email: "",
+        phone: "",
+        gstin: "",
+        address: "",
+        city: "Bangalore",
+        state: "Karnataka",
+        pincode: "560038",
+        notes: "",
+      });
+      fetchCustomers();
     } catch (err) {
       console.error(err);
+      toast.error("Network error creating client");
     } finally {
       setSaving(false);
     }
@@ -389,3 +405,4 @@ export default function CustomersPage() {
     </div>
   );
 }
+

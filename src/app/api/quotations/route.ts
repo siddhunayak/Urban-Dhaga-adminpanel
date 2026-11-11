@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { generateNextQuoteNumber } from "@/lib/sequence";
 
 export async function GET(request: Request) {
   try {
@@ -40,10 +41,15 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const count = await prisma.quotation.count();
-    const quoteNumber = `UD-QT-2026-${String(43 + count).padStart(4, "0")}`;
+    if (!body.companyName || !body.customerName || !Array.isArray(body.items) || body.items.length === 0) {
+      return NextResponse.json(
+        { error: "Company name, contact person, and at least one line item are required" },
+        { status: 400 }
+      );
+    }
 
-    const items = body.items || [];
+    const quoteNumber = await generateNextQuoteNumber();
+    const items = body.items;
     let subtotal = 0;
 
     const formattedItems = items.map((it: {
@@ -82,7 +88,7 @@ export async function POST(request: Request) {
     const discountPercent = Number(body.discountPercent) || 0;
     const discountAmount = (subtotal * discountPercent) / 100;
     const taxableAmount = subtotal - discountAmount;
-    const gstRate = Number(body.gstRate) || 5.0;
+    const gstRate = body.gstRate !== undefined && body.gstRate !== null ? Number(body.gstRate) : 5.0;
     const taxAmount = (taxableAmount * gstRate) / 100;
     const grandTotal = Math.round(taxableAmount + taxAmount);
 
@@ -94,11 +100,11 @@ export async function POST(request: Request) {
       data: {
         quoteNumber,
         customerId: body.customerId || null,
-        customerName: body.customerName,
-        companyName: body.companyName,
-        clientEmail: body.clientEmail,
-        clientPhone: body.clientPhone,
-        clientGstin: body.clientGstin || null,
+        customerName: body.customerName.trim(),
+        companyName: body.companyName.trim(),
+        clientEmail: body.clientEmail?.trim() || "orders@urbandhaga.com",
+        clientPhone: body.clientPhone?.trim() || "—",
+        clientGstin: body.clientGstin ? body.clientGstin.trim().toUpperCase() : null,
         shippingAddress: body.shippingAddress || null,
         status: body.status || "DRAFT",
         validUntil,
@@ -109,7 +115,10 @@ export async function POST(request: Request) {
         gstRate,
         taxAmount,
         grandTotal,
-        advanceRequiredPercent: Number(body.advanceRequiredPercent) || 50.0,
+        advanceRequiredPercent:
+          body.advanceRequiredPercent !== undefined && body.advanceRequiredPercent !== null
+            ? Number(body.advanceRequiredPercent)
+            : 50.0,
         paymentTerms: body.paymentTerms || "50% advance on approval, 50% prior to dispatch",
         estimatedDays: Number(body.estimatedDays) || 10,
         notes: body.notes || null,
@@ -138,3 +147,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create quotation" }, { status: 500 });
   }
 }
+

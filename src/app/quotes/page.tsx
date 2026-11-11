@@ -2,19 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
-  FileSpreadsheet,
   Plus,
   Search,
-  Download,
   CheckCircle2,
-  Clock,
-  ArrowRight,
-  Filter,
   RefreshCw,
-  Building2,
   FileDown,
   ArrowUpRight,
+  Trash2,
 } from "lucide-react";
 import { formatCurrency, formatDate, QUOTE_STATUS } from "@/lib/utils";
 import { generateQuotationPDF } from "@/lib/pdf-generator";
@@ -82,8 +78,11 @@ export default function QuotationsPage() {
   };
 
   useEffect(() => {
-    fetchQuotes();
-  }, [statusFilter]);
+    const timer = setTimeout(() => {
+      fetchQuotes();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [statusFilter, search]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,6 +112,43 @@ export default function QuotationsPage() {
       notes: q.notes,
     });
     doc.save(`${q.quoteNumber}_Urban_Dhaga_Estimate.pdf`);
+    toast.success(`Downloaded ${q.quoteNumber} PDF`);
+  };
+
+  const handleStatusChange = async (quoteId: string, status: string) => {
+    try {
+      const res = await fetch(`/api/quotations/${quoteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Failed to update quote status");
+        return;
+      }
+      toast.success(`Quote status updated to ${status}`);
+      fetchQuotes();
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error updating quote");
+    }
+  };
+
+  const handleDeleteQuote = async (quoteId: string, quoteNumber: string) => {
+    try {
+      const res = await fetch(`/api/quotations/${quoteId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Failed to delete quotation");
+        return;
+      }
+      toast.success(`Deleted draft quotation ${quoteNumber}`);
+      fetchQuotes();
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error deleting quotation");
+    }
   };
 
   const handleConvertToOrder = async (quoteId: string) => {
@@ -124,11 +160,17 @@ export default function QuotationsPage() {
         body: JSON.stringify({ action: "CONVERT_TO_ORDER" }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to convert quotation");
+        return;
+      }
       if (data.success) {
+        toast.success(`Converted to Production Order ${data.order.orderNumber}`);
         fetchQuotes();
       }
     } catch (err) {
       console.error(err);
+      toast.error("Network error converting quotation");
     } finally {
       setConvertingId(null);
     }
@@ -314,13 +356,27 @@ export default function QuotationsPage() {
                       </td>
 
                       <td className="px-4 py-3.5 text-center">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${statusConfig.badge}`}>
-                          {statusConfig.label}
-                        </span>
-                        {isConverted && (
-                          <div className="text-[10px] font-mono text-emerald-600 mt-1">
-                            Order {q.order?.orderNumber}
-                          </div>
+                        {isConverted ? (
+                          <>
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${statusConfig.badge}`}>
+                              {statusConfig.label}
+                            </span>
+                            <div className="text-[10px] font-mono text-emerald-600 mt-1">
+                              Order {q.order?.orderNumber}
+                            </div>
+                          </>
+                        ) : (
+                          <select
+                            value={q.status}
+                            onChange={(e) => handleStatusChange(q.id, e.target.value)}
+                            className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border cursor-pointer focus:outline-hidden ${statusConfig.badge}`}
+                          >
+                            {Object.entries(QUOTE_STATUS).map(([k, v]) => (
+                              <option key={k} value={k}>
+                                {v.label}
+                              </option>
+                            ))}
+                          </select>
                         )}
                       </td>
 
@@ -335,14 +391,23 @@ export default function QuotationsPage() {
                         </button>
 
                         {!isConverted && (
-                          <button
-                            onClick={() => handleConvertToOrder(q.id)}
-                            disabled={convertingId === q.id}
-                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-xs inline-flex items-center gap-1 active:scale-95"
-                          >
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>{convertingId === q.id ? "Converting..." : "Accept & Order"}</span>
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleConvertToOrder(q.id)}
+                              disabled={convertingId === q.id}
+                              className="px-2.5 py-1 rounded-md text-[11px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-xs inline-flex items-center gap-1 active:scale-95"
+                            >
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>{convertingId === q.id ? "Converting..." : "Accept & Order"}</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuote(q.id, q.quoteNumber)}
+                              title="Delete Draft Quotation"
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-500/10 transition-colors inline-flex items-center"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
                         )}
 
                         {isConverted && (
@@ -366,3 +431,4 @@ export default function QuotationsPage() {
     </div>
   );
 }
+

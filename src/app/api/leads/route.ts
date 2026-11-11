@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { generateNextLeadNumber } from "@/lib/sequence";
 
 export async function GET(request: Request) {
   try {
@@ -35,16 +36,22 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const count = await prisma.lead.count();
-    const leadNumber = `LD-${1040 + count + 1}`;
+    if (!body.companyName || !body.contactPerson || !body.phone || !body.requirement) {
+      return NextResponse.json(
+        { error: "Company name, contact person, phone, and requirement are required" },
+        { status: 400 }
+      );
+    }
+
+    const leadNumber = await generateNextLeadNumber();
 
     const lead = await prisma.lead.create({
       data: {
         leadNumber,
-        companyName: body.companyName,
-        contactPerson: body.contactPerson,
-        email: body.email,
-        phone: body.phone,
+        companyName: body.companyName.trim(),
+        contactPerson: body.contactPerson.trim(),
+        email: body.email?.trim() || "pending@urbandhaga.com",
+        phone: body.phone.trim(),
         city: body.city || null,
         requirement: body.requirement,
         category: body.category || "APPAREL",
@@ -74,3 +81,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create lead" }, { status: 500 });
   }
 }
+

@@ -1,20 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   Users2,
   Plus,
-  Search,
   Phone,
-  Mail,
   MapPin,
   Star,
-  Layers,
-  Wrench,
-  CheckCircle2,
   X,
   RefreshCw,
-  Factory,
 } from "lucide-react";
 
 interface Vendor {
@@ -74,12 +69,28 @@ export default function VendorsPage() {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        setShowAddModal(false);
-        fetchVendors();
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to register partner");
+        return;
       }
+
+      toast.success(`Registered partner ${data.name}`);
+      setShowAddModal(false);
+      setFormData({
+        name: "",
+        companyName: "",
+        contactPerson: "",
+        phone: "",
+        email: "",
+        servicesProvided: "SCREEN_PRINTING, DTF",
+        address: "Peenya Industrial Area, Bangalore",
+        rating: 4.8,
+      });
+      fetchVendors();
     } catch (err) {
       console.error(err);
+      toast.error("Network error registering partner");
     } finally {
       setSaving(false);
     }
@@ -295,3 +306,4 @@ export default function VendorsPage() {
     </div>
   );
 }
+
