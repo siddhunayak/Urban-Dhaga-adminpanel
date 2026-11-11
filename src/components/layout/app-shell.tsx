@@ -1,0 +1,35 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Header } from "@/components/layout/header";
+import { CommandPalette } from "@/components/command-palette";
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCommandOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <Header onOpenCommand={() => setCommandOpen(true)} />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+
+      <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
+    </div>
+  );
+}
