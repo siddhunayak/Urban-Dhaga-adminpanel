@@ -1,15 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { CommandPalette } from "@/components/command-palette";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [commandOpen, setCommandOpen] = useState(false);
 
+  const isAuthPage = pathname === "/login";
+
   useEffect(() => {
+    if (isAuthPage) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -18,7 +23,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [isAuthPage]);
+
+  if (isAuthPage) {
+    return (
+      <>
+        {children}
+        <Toaster richColors position="bottom-right" closeButton />
+      </>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">

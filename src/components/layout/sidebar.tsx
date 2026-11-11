@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Factory,
@@ -12,9 +12,10 @@ import {
   Building2,
   Users2,
   Sparkles,
-  ChevronRight,
   ShieldCheck,
   Receipt,
+  LogOut,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -55,19 +56,22 @@ const NAV_ITEMS: NavGroup[] = [
     items: [
       { name: "Corporate Clients", href: "/customers", icon: Building2 },
       { name: "Vendors & Workshops", href: "/vendors", icon: Users2 },
+      { name: "Team & Audit Log", href: "/team", icon: Shield },
     ],
   },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [counts, setCounts] = useState<{ activeOrders?: number; lowStock?: number; newLeads?: number }>({});
+  const [user, setUser] = useState<{ name: string; role: string; department: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/dashboard/stats")
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data.metrics) {
+        if (data?.metrics) {
           setCounts({
             activeOrders: data.metrics.activeOrdersCount,
             lowStock: data.metrics.lowStockCount,
@@ -76,7 +80,27 @@ export function Sidebar() {
         }
       })
       .catch(() => {});
+
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) setUser(data.user);
+      })
+      .catch(() => {});
   }, [pathname]);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
+
+  const initials = (user?.name || "Admin")
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <aside className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col h-screen select-none shrink-0 sticky top-0">
@@ -172,23 +196,30 @@ export function Sidebar() {
         </p>
       </div>
 
-      {/* User Switcher Footer */}
-      <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+      {/* Authenticated Staff Footer */}
+      <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-            AS
+            {initials}
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">
-              Arjun Sharma
+              {user?.name || "Loading..."}
             </span>
             <span className="text-[10px] text-zinc-400 truncate flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
-              Owner / Admin
+              {user ? `${user.role} • ${user.department}` : "Staff Session"}
             </span>
           </div>
         </div>
-        <ChevronRight className="w-4 h-4 text-zinc-400" />
+        <button
+          type="button"
+          onClick={handleLogout}
+          title="Sign Out"
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-500/10 transition-colors shrink-0"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </aside>
   );

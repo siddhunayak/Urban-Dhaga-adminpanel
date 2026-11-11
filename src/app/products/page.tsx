@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Package,
@@ -74,7 +74,7 @@ export default function ProductsPage() {
   });
   const [saving, setSaving] = useState(false);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const url = new URL("/api/products", window.location.origin);
@@ -89,14 +89,14 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryFilter, search]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchProducts();
     }, 200);
     return () => clearTimeout(timer);
-  }, [categoryFilter, search]);
+  }, [fetchProducts]);
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();

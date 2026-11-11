@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Receipt,
@@ -8,8 +8,6 @@ import {
   FileDown,
   IndianRupee,
   RefreshCw,
-  CheckCircle2,
-  Clock,
   Download,
   X,
 } from "lucide-react";
@@ -59,7 +57,7 @@ export default function InvoicesPage() {
   const [collectedAmount, setCollectedAmount] = useState(0);
   const [savingPayment, setSavingPayment] = useState(false);
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     try {
       setLoading(true);
       const url = new URL("/api/invoices", window.location.origin);
@@ -74,14 +72,14 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, search]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchInvoices();
     }, 200);
     return () => clearTimeout(timer);
-  }, [statusFilter, search]);
+  }, [fetchInvoices]);
 
   const handleDownloadInvoice = (inv: InvoiceRecord) => {
     const doc = generateTaxInvoicePDF({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Building2,
@@ -49,7 +49,7 @@ export default function CustomersPage() {
     notes: "",
   });
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       const url = new URL("/api/customers", window.location.origin);
@@ -63,14 +63,14 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchCustomers();
     }, 200);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [fetchCustomers]);
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();

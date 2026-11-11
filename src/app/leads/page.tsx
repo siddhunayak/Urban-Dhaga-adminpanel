@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -68,7 +68,7 @@ export default function LeadsPage() {
     assignedTo: "Pooja Nair",
   });
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
       const url = new URL("/api/leads", window.location.origin);
@@ -83,7 +83,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [stageFilter, search]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -97,7 +97,7 @@ export default function LeadsPage() {
       fetchLeads();
     }, 200);
     return () => clearTimeout(timer);
-  }, [stageFilter, search]);
+  }, [fetchLeads]);
 
   const handleUpdateStage = async (leadId: string, nextStage: string) => {
     try {

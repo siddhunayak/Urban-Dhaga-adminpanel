@@ -1,8 +1,16 @@
 const { PrismaClient } = require("@prisma/client");
+const crypto = require("crypto");
 const prisma = new PrismaClient();
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
 
 async function main() {
   console.log("Starting Urban Dhaga database seed...");
+  const defaultPasswordHash = hashPassword("urbandhaga2026");
 
   // 1. Clean existing records safely
   await prisma.activityLog.deleteMany();
@@ -27,7 +35,10 @@ async function main() {
       data: {
         name: "Arjun Sharma",
         email: "arjun@urbandhaga.com",
+        passwordHash: defaultPasswordHash,
         role: "OWNER",
+        department: "Management",
+        isActive: true,
         phone: "+91 98765 43210",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       },
@@ -36,7 +47,10 @@ async function main() {
       data: {
         name: "Pooja Nair",
         email: "pooja.sales@urbandhaga.com",
+        passwordHash: defaultPasswordHash,
         role: "SALES",
+        department: "Sales & Quotes",
+        isActive: true,
         phone: "+91 98111 22334",
         avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
       },
@@ -45,7 +59,10 @@ async function main() {
       data: {
         name: "Vikram Rathore",
         email: "vikram.ops@urbandhaga.com",
+        passwordHash: defaultPasswordHash,
         role: "PRODUCTION",
+        department: "Production & QC",
+        isActive: true,
         phone: "+91 98222 33445",
         avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
       },
@@ -54,7 +71,10 @@ async function main() {
       data: {
         name: "Meera Sen",
         email: "meera.accounts@urbandhaga.com",
+        passwordHash: defaultPasswordHash,
         role: "ACCOUNTS",
+        department: "Accounts & Billing",
+        isActive: true,
         phone: "+91 98333 44556",
         avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
       },

@@ -62,12 +62,21 @@ Built with Next.js 15 (App Router), Prisma, SQLite (zero-config local run with s
 - B2B Accounts directory with GSTIN, delivery addresses, and cumulative lifetime GMV.
 - Manufacturing workshops & job workers (screen printers, embroidery studio, packaging partners) with ratings and active job assignments.
 
+### 8. Tax Invoices & Receivables Ledger (`/invoices`)
+- GST-compliant B2B Tax Invoice PDF generator (CGST/SGST & IGST, advance deducted, balance payable, bank NEFT details).
+- Payment collection tracking (`PENDING`, `PARTIAL_PAID`, `FULLY_PAID`) and accountant CSV export.
+
+### 9. Staff Auth, RBAC & Audit Log (`/login`, `/team`)
+- Signed HTTP-only session cookies (`HMAC-SHA256`) protecting all pages and API endpoints via Next.js Middleware.
+- Owner-only staff provisioning (`OWNER`, `SALES`, `PRODUCTION`, `ACCOUNTS`, `STAFF`) and immutable activity audit log.
+
 ---
 
 ## Quickstart & Local Setup
 
-### 1. Install Dependencies
+### 1. Environment & Dependencies
 ```bash
+cp .env.example .env
 npm install
 ```
 
@@ -76,6 +85,7 @@ npm install
 npx prisma db push
 node prisma/seed.js
 ```
+Default seeded login: `arjun@urbandhaga.com` / `urbandhaga2026` (change password in production via `/team`).
 
 ### 3. Start Development Server
 ```bash
@@ -83,8 +93,12 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) to view the Admin Panel.
 
-### 4. Production Build
+### 4. Production Deployment (PostgreSQL / Supabase / Railway)
+1. Set `DATABASE_URL` (for PostgreSQL/Supabase, update `provider = "postgresql"` in `prisma/schema.prisma`) and a strong random 32+ char `AUTH_SECRET`.
+2. Run `npx prisma db push && node prisma/seed.js` (first deploy only).
+3. Build & start:
 ```bash
 npm run build
 npm start
 ```
+4. Health check endpoint: `GET /api/health`

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Factory,
@@ -8,7 +8,6 @@ import {
   Table as TableIcon,
   Search,
   Filter,
-  CheckCircle2,
   Truck,
   Clock,
   ShieldCheck,
@@ -144,7 +143,7 @@ export default function ProductionPage() {
   const [mockupUrl, setMockupUrl] = useState("");
   const [savingMockup, setSavingMockup] = useState(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const url = new URL("/api/orders", window.location.origin);
@@ -153,26 +152,26 @@ export default function ProductionPage() {
       if (search) url.searchParams.set("search", search);
 
       const res = await fetch(url.toString());
-      const data = await res.json();
+      const data: Order[] = await res.json();
       setOrders(data);
 
-      if (selectedOrder) {
-        const refreshed = data.find((o: Order) => o.id === selectedOrder.id);
-        if (refreshed) setSelectedOrder(refreshed);
-      }
+      setSelectedOrder((prev) => {
+        if (!prev) return null;
+        return data.find((o) => o.id === prev.id) || prev;
+      });
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [stageFilter, priorityFilter, search]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchOrders();
     }, 200);
     return () => clearTimeout(timer);
-  }, [stageFilter, priorityFilter, search]);
+  }, [fetchOrders]);
 
   const handleOpenDetail = (ord: Order) => {
     setSelectedOrder(ord);
@@ -461,7 +460,7 @@ export default function ProductionPage() {
             className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-850 text-zinc-600 dark:text-zinc-400"
             title="Refresh Orders"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-orange-600" : ""}`} />
           </button>
         </div>
       </div>

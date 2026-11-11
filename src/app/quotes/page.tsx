@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -60,7 +60,7 @@ export default function QuotationsPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [convertingId, setConvertingId] = useState<string | null>(null);
 
-  const fetchQuotes = async () => {
+  const fetchQuotes = useCallback(async () => {
     try {
       setLoading(true);
       const url = new URL("/api/quotations", window.location.origin);
@@ -75,14 +75,14 @@ export default function QuotationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, search]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchQuotes();
     }, 200);
     return () => clearTimeout(timer);
-  }, [statusFilter, search]);
+  }, [fetchQuotes]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

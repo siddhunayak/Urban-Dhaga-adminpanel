@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Boxes,
@@ -44,7 +44,7 @@ export default function InventoryPage() {
   const [notes, setNotes] = useState("Factory blank inward receipt");
   const [adjusting, setAdjusting] = useState(false);
 
-  const fetchInventory = async () => {
+  const fetchInventory = useCallback(async () => {
     try {
       setLoading(true);
       const url = new URL("/api/inventory", window.location.origin);
@@ -60,14 +60,14 @@ export default function InventoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryFilter, lowStockOnly, search]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchInventory();
     }, 200);
     return () => clearTimeout(timer);
-  }, [categoryFilter, lowStockOnly, search]);
+  }, [fetchInventory]);
 
   const handleAdjustStock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,15 +345,17 @@ export default function InventoryPage() {
               <div>
                 <label className="text-zinc-500 font-medium">Action Type</label>
                 <div className="grid grid-cols-3 gap-2 mt-1">
-                  {[
-                    { key: "INWARD", label: "Inward Stock (+)" },
-                    { key: "DISPATCH", label: "Deduct (-)" },
-                    { key: "SET", label: "Audit Count (=)" },
-                  ].map((act) => (
+                  {(
+                    [
+                      { key: "INWARD", label: "Inward Stock (+)" },
+                      { key: "DISPATCH", label: "Deduct (-)" },
+                      { key: "SET", label: "Audit Count (=)" },
+                    ] as const
+                  ).map((act) => (
                     <button
                       key={act.key}
                       type="button"
-                      onClick={() => setAdjustmentType(act.key as any)}
+                      onClick={() => setAdjustmentType(act.key)}
                       className={`py-1.5 px-2 rounded-lg font-medium border text-center transition-colors ${
                         adjustmentType === act.key
                           ? "bg-orange-600 text-white border-orange-600"
