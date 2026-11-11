@@ -14,6 +14,7 @@ import {
   Users2,
   Plus,
   X,
+  Receipt,
 } from "lucide-react";
 
 interface CommandItem {
@@ -30,6 +31,7 @@ const STATIC_COMMANDS: CommandItem[] = [
   { id: "prod", title: "Production & Orders", subtitle: "Kanban board, mockups & 5-point QC gates", category: "Navigation", href: "/production", icon: Factory },
   { id: "quote-new", title: "Create New Estimate", subtitle: "Interactive quotation builder & PDF generator", category: "Quick Action", href: "/quotes/new", icon: Plus },
   { id: "quotes", title: "Quotations & Estimates", subtitle: "Review drafts, issued proposals & conversions", category: "Navigation", href: "/quotes", icon: FileSpreadsheet },
+  { id: "invoices", title: "Tax Invoices & Ledger", subtitle: "GST billing, receivables & CSV export", category: "Navigation", href: "/invoices", icon: Receipt },
   { id: "leads", title: "Inquiries & Leads", subtitle: "Bulk corporate lead stages", category: "Navigation", href: "/leads", icon: Inbox },
   { id: "products", title: "Catalog & Slabs", subtitle: "Volume discount matrix & materials", category: "Navigation", href: "/products", icon: Package },
   { id: "inventory", title: "Stock & Inventory", subtitle: "Variant physical inventory & inward", category: "Navigation", href: "/inventory", icon: Boxes },

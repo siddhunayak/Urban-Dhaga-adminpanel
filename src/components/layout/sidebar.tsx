@@ -14,7 +14,7 @@ import {
   Sparkles,
   ChevronRight,
   ShieldCheck,
-  AlertCircle,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -39,6 +39,7 @@ const NAV_ITEMS: NavGroup[] = [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Production & Orders", href: "/production", icon: Factory, badgeKey: "activeOrders" },
       { name: "Quotations & Estimates", href: "/quotes", icon: FileSpreadsheet },
+      { name: "Invoices & Ledger", href: "/invoices", icon: Receipt },
       { name: "Leads & Inquiries", href: "/leads", icon: Inbox, badgeKey: "newLeads" },
     ],
   },

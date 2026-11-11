@@ -186,8 +186,8 @@ export function generateQuotationPDF(data: QuotationPDFData): jsPDF {
       (idx + 1).toString(),
       description,
       item.quantity.toLocaleString("en-IN"),
-      `₹${item.unitPrice.toLocaleString("en-IN")}`,
-      `₹${item.lineTotal.toLocaleString("en-IN")}`,
+      `Rs. ${item.unitPrice.toLocaleString("en-IN")}`,
+      `Rs. ${item.lineTotal.toLocaleString("en-IN")}`,
     ];
   });
 
@@ -252,18 +252,18 @@ export function generateQuotationPDF(data: QuotationPDFData): jsPDF {
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
 
   doc.text("Subtotal:", summaryX, currentY);
-  doc.text(`₹${data.subtotal.toLocaleString("en-IN")}`, valueX, currentY, { align: "right" });
+  doc.text(`Rs. ${data.subtotal.toLocaleString("en-IN")}`, valueX, currentY, { align: "right" });
 
   if (data.discountAmount && data.discountAmount > 0) {
     currentY += 5;
     doc.text(`Discount (${data.discountPercent || 0}%):`, summaryX, currentY);
-    doc.text(`- ₹${data.discountAmount.toLocaleString("en-IN")}`, valueX, currentY, { align: "right" });
+    doc.text(`- Rs. ${data.discountAmount.toLocaleString("en-IN")}`, valueX, currentY, { align: "right" });
   }
 
   currentY += 5;
   const taxLabel = data.taxType === "IGST" ? `IGST (${data.gstRate}%)` : `GST (${data.gstRate}%)`;
   doc.text(taxLabel, summaryX, currentY);
-  doc.text(`₹${data.taxAmount.toLocaleString("en-IN")}`, valueX, currentY, { align: "right" });
+  doc.text(`Rs. ${data.taxAmount.toLocaleString("en-IN")}`, valueX, currentY, { align: "right" });
 
   currentY += 3;
   doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
@@ -274,7 +274,7 @@ export function generateQuotationPDF(data: QuotationPDFData): jsPDF {
   doc.setFontSize(11);
   doc.setTextColor(brandAccent[0], brandAccent[1], brandAccent[2]);
   doc.text("Total Payable:", summaryX, currentY);
-  doc.text(`₹${data.grandTotal.toLocaleString("en-IN")}`, valueX, currentY, { align: "right" });
+  doc.text(`Rs. ${data.grandTotal.toLocaleString("en-IN")}`, valueX, currentY, { align: "right" });
 
   // 6. Signature Block
   const sigY = currentY + 22;
@@ -428,6 +428,213 @@ export function generateJobSheetPDF(data: JobSheetPDFData): jsPDF {
   doc.text("Floor Supervisor Sign", 14, qcY + 5);
   doc.text("QC Master Sign", 80, qcY + 5);
   doc.text("Dispatch Handler Sign", 145, qcY + 5);
+
+  return doc;
+}
+
+export interface TaxInvoicePDFData {
+  invoiceNumber: string;
+  orderNumber: string;
+  companyName: string;
+  contactPerson: string;
+  contactPhone: string;
+  clientGstin?: string | null;
+  shippingAddress: string;
+  issueDate: string | Date;
+  items: Array<{
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+    customizationDetails?: string | null;
+  }>;
+  gstRate: number;
+  taxType: string;
+  totalAmount: number;
+  advancePaid: number;
+  balanceDue: number;
+  paymentStatus: string;
+}
+
+/**
+ * Generates an official B2B GST Tax Invoice PDF for Urban Dhaga
+ */
+export function generateTaxInvoicePDF(data: TaxInvoicePDFData): jsPDF {
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
+
+  const brandDark = [24, 24, 27];
+  const brandAccent = [194, 65, 12];
+  const textMuted = [113, 113, 122];
+  const borderLight = [228, 228, 231];
+
+  doc.setFillColor(brandDark[0], brandDark[1], brandDark[2]);
+  doc.rect(0, 0, 210, 18, "F");
+  doc.setFillColor(brandAccent[0], brandAccent[1], brandAccent[2]);
+  doc.rect(0, 18, 210, 2, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("URBAN DHAGA MERCHANDISING LLP", 14, 12);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("GSTIN: 29AAHCU8891P1ZV  |  accounts@urbandhaga.com", 196, 12, { align: "right" });
+
+  doc.setTextColor(brandDark[0], brandDark[1], brandDark[2]);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.text("TAX INVOICE", 14, 32);
+
+  doc.setFontSize(10);
+  doc.setTextColor(brandAccent[0], brandAccent[1], brandAccent[2]);
+  doc.text(`INV NO: ${data.invoiceNumber}`, 14, 38);
+
+  const issued = new Date(data.issueDate).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text("Invoice Date:", 145, 32);
+  doc.text("Order Ref:", 145, 38);
+  doc.text("Payment Status:", 145, 44);
+
+  doc.setTextColor(brandDark[0], brandDark[1], brandDark[2]);
+  doc.setFont("helvetica", "bold");
+  doc.text(issued, 196, 32, { align: "right" });
+  doc.text(data.orderNumber, 196, 38, { align: "right" });
+  doc.text(data.paymentStatus.replace("_", " "), 196, 44, { align: "right" });
+
+  doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+  doc.line(14, 49, 196, 49);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(brandAccent[0], brandAccent[1], brandAccent[2]);
+  doc.text("BILLED TO", 14, 56);
+
+  doc.setFontSize(11);
+  doc.setTextColor(brandDark[0], brandDark[1], brandDark[2]);
+  doc.text(data.companyName, 14, 62);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+  doc.text(`Attn: ${data.contactPerson}  |  Phone: ${data.contactPhone}`, 14, 67);
+  doc.text(`Address: ${data.shippingAddress}`, 14, 72);
+  if (data.clientGstin) {
+    doc.text(`Client GSTIN: ${data.clientGstin}`, 14, 77);
+  }
+
+  const rows = data.items.map((it, idx) => [
+    (idx + 1).toString(),
+    `${it.productName}${it.customizationDetails ? `\n(${it.customizationDetails})` : ""}`,
+    it.quantity.toLocaleString("en-IN"),
+    `Rs. ${it.unitPrice.toLocaleString("en-IN")}`,
+    `Rs. ${it.lineTotal.toLocaleString("en-IN")}`,
+  ]);
+
+  autoTable(doc, {
+    startY: 84,
+    head: [["#", "Description of Goods / Services", "Qty", "Rate", "Amount (INR)"]],
+    body: rows,
+    theme: "plain",
+    headStyles: {
+      fillColor: [244, 244, 245],
+      textColor: [24, 24, 27],
+      fontStyle: "bold",
+      fontSize: 9,
+      cellPadding: 3.5,
+    },
+    bodyStyles: {
+      textColor: [39, 39, 42],
+      fontSize: 8.5,
+      cellPadding: 4,
+    },
+    columnStyles: {
+      0: { cellWidth: 10, halign: "center" },
+      1: { cellWidth: 100 },
+      2: { cellWidth: 20, halign: "right" },
+      3: { cellWidth: 25, halign: "right" },
+      4: { cellWidth: 27, halign: "right", fontStyle: "bold" },
+    },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const finalY = ((doc as any).lastAutoTable?.finalY || 140) + 8;
+
+  const taxableBase = Math.round(data.totalAmount / (1 + data.gstRate / 100));
+  const taxAmt = data.totalAmount - taxableBase;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(brandDark[0], brandDark[1], brandDark[2]);
+  doc.text("BANK DETAILS FOR NEFT / RTGS / IMPS", 14, finalY);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+  doc.text(
+    [
+      "Account Name: Urban Dhaga Merchandising LLP",
+      "Bank: HDFC Bank, Indiranagar Branch, Bangalore",
+      "A/C No: 50200084910221  |  IFSC: HDFC0000184",
+    ],
+    14,
+    finalY + 5
+  );
+
+  const sx = 135;
+  const vx = 196;
+  let cy = finalY;
+
+  doc.setFontSize(9);
+  doc.text("Taxable Value:", sx, cy);
+  doc.text(`Rs. ${taxableBase.toLocaleString("en-IN")}`, vx, cy, { align: "right" });
+
+  cy += 5;
+  if (data.taxType === "IGST") {
+    doc.text(`IGST (${data.gstRate}%):`, sx, cy);
+    doc.text(`Rs. ${taxAmt.toLocaleString("en-IN")}`, vx, cy, { align: "right" });
+  } else {
+    const half = (data.gstRate / 2).toFixed(1);
+    const halfAmt = Math.round(taxAmt / 2);
+    doc.text(`CGST (${half}%) + SGST (${half}%):`, sx, cy);
+    doc.text(`Rs. ${(halfAmt * 2).toLocaleString("en-IN")}`, vx, cy, { align: "right" });
+  }
+
+  cy += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(brandDark[0], brandDark[1], brandDark[2]);
+  doc.text("Invoice Total:", sx, cy);
+  doc.text(`Rs. ${data.totalAmount.toLocaleString("en-IN")}`, vx, cy, { align: "right" });
+
+  cy += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(22, 101, 52);
+  doc.text("Less: Advance / Paid:", sx, cy);
+  doc.text(`- Rs. ${data.advancePaid.toLocaleString("en-IN")}`, vx, cy, { align: "right" });
+
+  cy += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(brandAccent[0], brandAccent[1], brandAccent[2]);
+  doc.text("Balance Payable:", sx, cy);
+  doc.text(`Rs. ${data.balanceDue.toLocaleString("en-IN")}`, vx, cy, { align: "right" });
+
+  const sigY = cy + 20;
+  doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+  doc.line(140, sigY, 196, sigY);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+  doc.text("For Urban Dhaga Merchandising LLP", 140, sigY + 5);
 
   return doc;
 }
