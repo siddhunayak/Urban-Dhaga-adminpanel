@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  role      String   @default("STAFF") // OWNER, SALES, PRODUCTION, ACCOUNTS, STAFF
+  avatar    String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id                String    @id @default(uuid())
+  leadNumber        String    @unique // e.g. LD-1048
+  companyName       String
+  contactPerson     String
+  email             String
+  phone             String
+  city              String?
+  requirement       String
+  category          String    @default("APPAREL") // APPAREL, GIFTS, PACKS, DRINKWARE, TECH
+  estimatedQuantity Int       @default(100)
+  estimatedBudget   Float?
+  targetDate        DateTime?
+  stage             String    @default("NEW") // NEW, CONTACTED, REQUIREMENT_GATHERED, QUOTE_SENT, NEGOTIATION, WON, LOST
+  source            String    @default("WEBSITE") // WEBSITE, WHATSAPP, REFERRAL, EVENT, DIRECT
+  notes             String?
+  assignedTo        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Customer {
+  id            String      @id @default(uuid())
+  customerCode  String      @unique // e.g. UD-CUST-104
+  companyName   String
+  contactPerson String
+  email         String
+  phone         String
+  gstin         String?
+  address       String?
+  city          String?
+  state         String?
+  pincode       String?
+  totalOrders   Int         @default(0)
+  totalSpend    Float       @default(0)
+  notes         String?
+  quotations    Quotation[]
+  orders        Order[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Product {
+  id           String           @id @default(uuid())
+  sku          String           @unique // e.g. UD-TSH-001
+  name         String
+  category     String // APPAREL, DRINKWARE, TECH, STATIONERY, WELCOME_KITS
+  description  String
+  basePrice    Float
+  gstRate      Float            @default(5.0) // 5% for standard apparel, 12% or 18%
+  hsnCode      String           @default("6109")
+  material     String? // e.g. "100% Combed Cotton 220 GSM"
+  leadTimeDays Int              @default(7)
+  images       String           @default("[]") // JSON string array of URLs
+  isActive     Boolean          @default(true)
+  variants     ProductVariant[]
+  pricingTiers PricingTier[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model ProductVariant {
+  id                 String   @id @default(uuid())
+  productId          String
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku                String   @unique
+  size               String // XS, S, M, L, XL, 2XL, 3XL, FREE_SIZE
+  color              String
+  colorHex           String   @default("#000000")
+  currentStock       Int      @default(0)
+  lowStockThreshold  Int      @default(20)
+  reorderQuantity    Int      @default(50)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model PricingTier {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  minQty    Int
+  maxQty    Int? // null indicates "+ and above"
+  unitPrice Float
+}
+
+model Quotation {
+  id                     String          @id @default(uuid())
+  quoteNumber            String          @unique // e.g. UD-QT-2026-0042
+  customerId             String?
+  customer               Customer?       @relation(fields: [customerId], references: [id])
+  customerName           String
+  companyName            String
+  clientEmail            String
+  clientPhone            String
+  clientGstin            String?
+  shippingAddress        String?
+  status                 String          @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED, EXPIRED
+  validUntil             DateTime
+  subtotal               Float           @default(0)
+  discountPercent        Float           @default(0)
+  discountAmount         Float           @default(0)
+  taxType                String          @default("CGST_SGST") // CGST_SGST, IGST
+  gstRate                Float           @default(5.0)
+  taxAmount              Float           @default(0)
+  grandTotal             Float           @default(0)
+  advanceRequiredPercent Float           @default(50.0)
+  paymentTerms           String          @default("50% advance on approval, 50% prior to dispatch")
+  estimatedDays          Int             @default(10)
+  notes                  String?
+  items                  QuotationItem[]
+  order                  Order?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+}
+
+model QuotationItem {
+  id                   String    @id @default(uuid())
+  quotationId          String
+  quotation            Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  productId            String?
+  productTitle         String
+  description          String?
+  sizeBreakdown        String? // JSON breakdown e.g. {"S":20,"M":40,"L":30,"XL":10}
+  quantity             Int
+  baseUnitPrice        Float
+  customizationDetails String? // e.g. "Left Chest Embroidery + Back Screen Print 2-color"
+  customizationCost    Float     @default(0)
+  unitPrice            Float // baseUnitPrice + customizationCost
+  lineTotal            Float
+}
+
+model Order {
+  id                 String           @id @default(uuid())
+  orderNumber        String           @unique // e.g. UD-ORD-2026-012
+  quotationId        String?          @unique
+  quotation          Quotation?       @relation(fields: [quotationId], references: [id])
+  customerId         String?
+  customer           Customer?        @relation(fields: [customerId], references: [id])
+  companyName        String
+  contactPerson      String
+  contactEmail       String
+  contactPhone       String
+  shippingAddress    String
+  stage              String           @default("ORDER_CONFIRMED") // ORDER_CONFIRMED, ARTWORK_SUBMITTED, SAMPLE_APPROVED, IN_PRODUCTION, QUALITY_CHECK, READY_FOR_DISPATCH, DISPATCHED, DELIVERED, CANCELLED
+  priority           String           @default("NORMAL") // NORMAL, HIGH, URGENT
+  targetDeliveryDate DateTime
+  actualDeliveryDate DateTime?
+  totalAmount        Float
+  advancePaid        Float            @default(0)
+  balanceDue         Float            @default(0)
+  paymentStatus      String           @default("PENDING") // PENDING, PARTIAL_PAID, FULLY_PAID
+  jobSheetNumber     String?
+  notes              String?
+  items              OrderItem[]
+  mockups            OrderMockup[]
+  qualityCheck       QualityCheck?
+  shipment           ShipmentDetails?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model OrderItem {
+  id                   String  @id @default(uuid())
+  orderId              String
+  order                Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productName          String
+  sku                  String?
+  sizeBreakdown        String? // JSON breakdown
+  quantity             Int
+  unitPrice            Float
+  customizationDetails String?
+  lineTotal            Float
+}
+
+model OrderMockup {
+  id             String   @id @default(uuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  title          String
+  fileUrl        String
+  version        Int      @default(1)
+  approvalStatus String   @default("PENDING_REVIEW") // PENDING_REVIEW, APPROVED, REVISIONS_REQUESTED
+  clientFeedback String?
+  uploadedAt     DateTime @default(now())
+}
+
+model QualityCheck {
+  id                     String    @id @default(uuid())
+  orderId                String    @unique
+  order                  Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fabricQualityChecked   Boolean   @default(false)
+  printFidelityChecked   Boolean   @default(false)
+  colorAccuracyChecked   Boolean   @default(false)
+  stitchingFinishChecked Boolean   @default(false)
+  packagingChecked       Boolean   @default(false)
+  passed                 Boolean   @default(false)
+  inspectedBy            String?
+  remarks                String?
+  checkedAt              DateTime?
+}
+
+model ShipmentDetails {
+  id                String    @id @default(uuid())
+  orderId           String    @unique
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  courierPartner    String // Delhivery, Shiprocket, Blue Dart, DTDC, Express, Hand Delivery
+  trackingNumber    String // AWB number
+  dispatchDate      DateTime?
+  estimatedDelivery DateTime?
+  deliveredDate     DateTime?
+  packageCount      Int       @default(1)
+  totalWeightKg     Float?
+  status            String    @default("MANIFESTED") // MANIFESTED, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED
+  trackingUrl       String?
+}
+
+model Vendor {
+  id               String   @id @default(uuid())
+  name             String
+  companyName      String
+  contactPerson    String
+  phone            String
+  email            String?
+  servicesProvided String // SCREEN_PRINTING, DTF, EMBROIDERY, TAILORING, PACKAGING, DRINKWARE_ENGRAVING
+  address          String?
+  rating           Float    @default(5.0)
+  activeJobsCount  Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  entityType  String // LEAD, QUOTE, ORDER, PRODUCT, INVENTORY, CUSTOMER
+  entityId    String
+  action      String // CREATED, UPDATED, STAGE_CHANGED, APPROVED, DISPATCHED, QC_PASSED
+  description String
+  performedBy String   @default("Admin")
+  createdAt   DateTime @default(now())
+}
