@@ -173,7 +173,7 @@ export default function LeadsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
-            <Inbox className="w-6 h-6 text-orange-600" />
+            <Inbox className="w-6 h-6 text-blue-600" />
             <span>Corporate Inquiries & Leads</span>
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -183,7 +183,7 @@ export default function LeadsPage() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm shadow-orange-600/30 transition-all self-start sm:self-auto"
+          className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-all self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>New Inbound Inquiry</span>
@@ -253,7 +253,7 @@ export default function LeadsPage() {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchLeads()}
             placeholder="Search company, contact, or req..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-orange-500"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -277,7 +277,7 @@ export default function LeadsPage() {
               {loading ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-zinc-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-orange-600" />
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
                     <span>Loading inquiries...</span>
                   </td>
                 </tr>
@@ -349,7 +349,7 @@ export default function LeadsPage() {
                       <td className="px-4 py-3.5 text-right whitespace-nowrap">
                         <Link
                           href={`/quotes/new?companyName=${encodeURIComponent(lead.companyName)}&customerName=${encodeURIComponent(lead.contactPerson)}&clientEmail=${encodeURIComponent(lead.email)}&clientPhone=${encodeURIComponent(lead.phone)}&notes=${encodeURIComponent(lead.requirement)}`}
-                          className="px-2.5 py-1 text-[11px] font-semibold text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-md inline-flex items-center gap-1 transition-colors"
+                          className="px-2.5 py-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-md inline-flex items-center gap-1 transition-colors"
                         >
                           <FileSpreadsheet className="w-3.5 h-3.5" />
                           <span>Quote</span>
@@ -501,7 +501,7 @@ export default function LeadsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm"
+                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm"
               >
                 {saving ? "Registering..." : "Save Inquiry"}
               </button>

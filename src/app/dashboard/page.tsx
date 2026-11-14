@@ -134,7 +134,7 @@ export default function DashboardPage() {
     return (
       <div className="p-8 flex items-center justify-center min-h-[500px]">
         <div className="flex flex-col items-center gap-3 text-zinc-400">
-          <RefreshCw className="w-6 h-6 animate-spin text-orange-600" />
+          <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
           <span className="text-xs font-mono">Loading operations telemetry...</span>
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
           </button>
           <Link
             href="/quotes/new"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm shadow-orange-600/30 transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Estimate</span>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500">
             <span>Advance: {formatCurrency(m?.totalCollected)}</span>
-            <span className="text-amber-600 dark:text-amber-400 font-medium">
+            <span className="text-blue-600 dark:text-blue-400 font-medium">
               Due: {formatCurrency(m?.balanceDue)}
             </span>
           </div>
@@ -197,14 +197,14 @@ export default function DashboardPage() {
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-sm relative overflow-hidden group">
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-medium">
             <span>Active Production Orders</span>
-            <Factory className="w-4 h-4 text-orange-500" />
+            <Factory className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           </div>
           <div className="mt-2 text-2xl font-bold font-mono text-zinc-900 dark:text-zinc-100 tracking-tight">
             {m?.activeOrdersCount || 0}
             <span className="text-xs font-normal text-zinc-400 ml-2">/ {m?.totalOrdersCount} total</span>
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-[11px] text-zinc-500">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
             <span>In Job Sheet & QC Gates</span>
           </div>
         </div>
@@ -251,7 +251,7 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/production"
-            className="text-xs text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 font-medium"
+            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
           >
             Open Kanban Board <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
@@ -390,7 +390,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/production"
-              className="text-xs text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 font-medium"
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
             >
               View all <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
@@ -457,7 +457,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/inventory"
-              className="text-xs text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 font-medium"
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
             >
               Full Inventory Matrix <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
@@ -495,7 +495,7 @@ export default function DashboardPage() {
 
                   <button
                     onClick={() => setRestockModal({ id: item.id, name: item.productName, sku: item.sku })}
-                    className="px-2.5 py-1 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 rounded-md border border-orange-500/20 transition-colors"
+                    className="px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-md border border-blue-500/20 transition-colors"
                   >
                     + Inward
                   </button>
@@ -515,7 +515,7 @@ export default function DashboardPage() {
       <div className="p-5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-orange-600" />
+            <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               Operations Audit Stream
             </h3>
@@ -564,7 +564,7 @@ export default function DashboardPage() {
                 min="1"
                 value={restockQty}
                 onChange={(e) => setRestockQty(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono focus:outline-hidden focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               />
               <div className="flex gap-2 pt-1">
                 {[25, 50, 100, 200].map((q) => (
@@ -592,7 +592,7 @@ export default function DashboardPage() {
                 type="button"
                 disabled={restocking}
                 onClick={handleQuickRestock}
-                className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-all"
+                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all"
               >
                 {restocking ? "Updating..." : `Confirm Inward (+${restockQty} pcs)`}
               </button>

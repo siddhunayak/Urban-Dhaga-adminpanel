@@ -42,7 +42,7 @@ interface InvoiceRecord {
 
 const PAYMENT_BADGES: Record<string, { label: string; badge: string }> = {
   PENDING: { label: "Pending", badge: "bg-red-500/10 text-red-600 border-red-500/20" },
-  PARTIAL_PAID: { label: "Partial Paid", badge: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  PARTIAL_PAID: { label: "Partial Paid", badge: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
   FULLY_PAID: { label: "Settled", badge: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
 };
 
@@ -177,7 +177,7 @@ export default function InvoicesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
-            <Receipt className="w-6 h-6 text-orange-600" />
+            <Receipt className="w-6 h-6 text-blue-600" />
             <span>Tax Invoices & Receivables Ledger</span>
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -189,7 +189,7 @@ export default function InvoicesPage() {
           onClick={handleExportCSV}
           className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 rounded-lg shadow-xs transition-colors self-start sm:self-auto"
         >
-          <Download className="w-3.5 h-3.5 text-orange-600" />
+          <Download className="w-3.5 h-3.5 text-blue-600" />
           <span>Export GST Ledger CSV</span>
         </button>
       </div>
@@ -216,7 +216,7 @@ export default function InvoicesPage() {
 
         <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-sm">
           <span className="text-xs text-zinc-500">Outstanding Receivables</span>
-          <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-1">
+          <div className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400 mt-1">
             {formatCurrency(totalReceivable)}
           </div>
           <span className="text-[11px] text-zinc-400">Balance due prior to / on dispatch</span>
@@ -248,7 +248,7 @@ export default function InvoicesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search invoice, order #, client..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-orange-500"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -272,7 +272,7 @@ export default function InvoicesPage() {
               {loading ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-zinc-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-orange-600" />
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
                     <span>Loading ledger...</span>
                   </td>
                 </tr>
@@ -314,7 +314,7 @@ export default function InvoicesPage() {
                         {formatCurrency(inv.advancePaid)}
                       </td>
 
-                      <td className="px-4 py-3.5 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
+                      <td className="px-4 py-3.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
                         {formatCurrency(inv.balanceDue)}
                       </td>
 
@@ -329,7 +329,7 @@ export default function InvoicesPage() {
                           onClick={() => handleDownloadInvoice(inv)}
                           className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 inline-flex items-center gap-1 text-[11px] font-medium"
                         >
-                          <FileDown className="w-3.5 h-3.5 text-orange-600" />
+                          <FileDown className="w-3.5 h-3.5 text-blue-600" />
                           <span>Tax Invoice</span>
                         </button>
 

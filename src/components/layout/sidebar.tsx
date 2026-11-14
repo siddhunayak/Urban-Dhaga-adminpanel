@@ -11,7 +11,6 @@ import {
   Boxes,
   Building2,
   Users2,
-  Sparkles,
   ShieldCheck,
   Receipt,
   LogOut,
@@ -105,21 +104,18 @@ export function Sidebar() {
   return (
     <aside className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col h-screen select-none shrink-0 sticky top-0">
       {/* Brand Header */}
-      <div className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 gap-3">
-        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center text-white font-bold shadow-sm shadow-orange-600/30">
-          <Sparkles className="w-5 h-5 text-amber-100" />
-        </div>
-        <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm tracking-tight truncate">
+      <div className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 justify-between">
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-sm tracking-tight truncate">
               Urban Dhaga
             </span>
-            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-500/20">
+            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-500/20">
               Admin
             </span>
           </div>
           <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
-            Merchandising & CRM
+            Corporate Merchandising & Ops
           </span>
         </div>
       </div>
@@ -199,7 +195,7 @@ export function Sidebar() {
       {/* Authenticated Staff Footer */}
       <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-blue-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
             {initials}
           </div>
           <div className="flex flex-col min-w-0">

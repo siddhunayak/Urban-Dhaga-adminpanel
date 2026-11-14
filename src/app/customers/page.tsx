@@ -120,7 +120,7 @@ export default function CustomersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
-            <Building2 className="w-6 h-6 text-orange-600" />
+            <Building2 className="w-6 h-6 text-blue-600" />
             <span>Corporate Clients & Accounts</span>
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -130,7 +130,7 @@ export default function CustomersPage() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm shadow-orange-600/30 transition-all self-start sm:self-auto"
+          className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-all self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Register Client Account</span>
@@ -174,7 +174,7 @@ export default function CustomersPage() {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchCustomers()}
             placeholder="Search company, SPOC, GSTIN..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-orange-500"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
           />
         </div>
 
@@ -205,7 +205,7 @@ export default function CustomersPage() {
               {loading ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-zinc-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-orange-600" />
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
                     <span>Loading corporate clients...</span>
                   </td>
                 </tr>
@@ -230,7 +230,7 @@ export default function CustomersPage() {
                         {c.companyName}
                       </div>
                       {c.gstin ? (
-                        <div className="text-[10px] font-mono text-orange-600 dark:text-orange-400">
+                        <div className="text-[10px] font-mono text-blue-600 dark:text-blue-400">
                           GSTIN: {c.gstin}
                         </div>
                       ) : (
@@ -394,7 +394,7 @@ export default function CustomersPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm"
+                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm"
               >
                 {saving ? "Registering..." : "Save Account"}
               </button>

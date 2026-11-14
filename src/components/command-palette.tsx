@@ -210,7 +210,7 @@ export function CommandPalette({
                     <div
                       className={`w-7 h-7 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
                         isSelected
-                          ? "bg-orange-500/10 border-orange-500/40 text-orange-600"
+                          ? "bg-blue-500/10 border-blue-500/40 text-blue-600 dark:text-blue-400"
                           : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400"
                       }`}
                     >
@@ -219,7 +219,7 @@ export function CommandPalette({
                     <div className="truncate">
                       <div
                         className={`text-xs font-semibold transition-colors ${
-                          isSelected ? "text-orange-600" : "text-zinc-900 dark:text-zinc-100"
+                          isSelected ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-zinc-100"
                         }`}
                       >
                         {item.title}

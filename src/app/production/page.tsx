@@ -420,7 +420,7 @@ export default function ProductionPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
-            <Factory className="w-6 h-6 text-orange-600" />
+            <Factory className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             <span>Production & Order Execution</span>
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -460,7 +460,7 @@ export default function ProductionPage() {
             className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-850 text-zinc-600 dark:text-zinc-400"
             title="Refresh Orders"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-orange-600" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
           </button>
         </div>
       </div>
@@ -504,7 +504,7 @@ export default function ProductionPage() {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchOrders()}
             placeholder="Search order #, client, job sheet..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-orange-500"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -546,10 +546,10 @@ export default function ProductionPage() {
                         <div
                           key={ord.id}
                           onClick={() => handleOpenDetail(ord)}
-                          className="p-3 bg-white dark:bg-zinc-850 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-orange-500/50 dark:hover:border-orange-500/50 shadow-xs cursor-pointer transition-all space-y-2 group"
+                          className="p-3 bg-white dark:bg-zinc-855 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 shadow-xs cursor-pointer transition-all space-y-2 group"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-orange-600 transition-colors">
+                            <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors">
                               {ord.orderNumber}
                             </span>
                             {ord.priority === "URGENT" || ord.priority === "HIGH" ? (
@@ -601,7 +601,7 @@ export default function ProductionPage() {
                                 handleAdvanceStage(ord.id, ord.stage, 1);
                               }}
                               disabled={colIdx === STAGE_ORDER.length - 1}
-                              className="p-1 text-orange-600 hover:text-orange-700 disabled:opacity-20 font-bold"
+                              className="p-1 text-blue-600 hover:text-blue-700 disabled:opacity-20 font-bold"
                               title="Advance to Next Stage"
                             >
                               <ChevronRight className="w-3.5 h-3.5" />
@@ -676,7 +676,7 @@ export default function ProductionPage() {
 
                       <td className="px-4 py-3 text-right font-mono font-bold text-zinc-900 dark:text-zinc-100">
                         {formatCurrency(ord.totalAmount)}
-                        <div className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">
+                        <div className="text-[10px] text-blue-600 dark:text-blue-400 font-normal">
                           Due: {formatCurrency(ord.balanceDue)}
                         </div>
                       </td>
@@ -695,7 +695,7 @@ export default function ProductionPage() {
                           }}
                           className="px-2.5 py-1 rounded text-[11px] font-medium bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 inline-flex items-center gap-1"
                         >
-                          <FileDown className="w-3.5 h-3.5 text-orange-600" />
+                          <FileDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                           <span>Job Sheet</span>
                         </button>
                       </td>
@@ -731,7 +731,7 @@ export default function ProductionPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleDownloadJobSheet(selectedOrder)}
-                  className="px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm inline-flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm inline-flex items-center gap-1.5"
                 >
                   <FileDown className="w-3.5 h-3.5" />
                   <span>Job Sheet PDF</span>
@@ -774,7 +774,7 @@ export default function ProductionPage() {
                   </button>
                   <button
                     onClick={() => handleAdvanceStage(selectedOrder.id, selectedOrder.stage, 1)}
-                    className="px-3 py-1 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded shadow-xs"
+                    className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded shadow-xs"
                   >
                     Advance Next Stage →
                   </button>
@@ -795,7 +795,7 @@ export default function ProductionPage() {
                       selectedOrder.paymentStatus === "FULLY_PAID"
                         ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                         : selectedOrder.paymentStatus === "PARTIAL_PAID"
-                        ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                        ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
                         : "bg-red-500/10 text-red-600 border-red-500/20"
                     }`}
                   >
@@ -814,7 +814,7 @@ export default function ProductionPage() {
                   </div>
                   <div className="p-2 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                     <span className="text-[10px] text-zinc-400 block">Balance Due</span>
-                    <strong className="text-amber-600">{formatCurrency(selectedOrder.balanceDue)}</strong>
+                    <strong className="text-blue-600">{formatCurrency(selectedOrder.balanceDue)}</strong>
                   </div>
                 </div>
 
@@ -942,7 +942,7 @@ export default function ProductionPage() {
                               <button
                                 type="button"
                                 onClick={() => handleMockupDecision(m.id, "REVISIONS_REQUESTED")}
-                                className="px-2 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded"
+                                className="px-2 py-0.5 text-[10px] font-semibold bg-blue-500/10 text-blue-600 border border-blue-500/20 rounded"
                               >
                                 Revise
                               </button>
@@ -978,10 +978,10 @@ export default function ProductionPage() {
               </div>
 
               {/* Mandatory 5-Point Quality Check Checklist */}
-              <div className="p-4 rounded-xl border border-orange-500/30 bg-orange-500/[0.03] space-y-4">
+              <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/[0.03] space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-orange-600" />
+                    <ShieldCheck className="w-4 h-4 text-blue-600" />
                     <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                       Mandatory 5-Point Quality Check Gate
                     </h3>
@@ -991,7 +991,7 @@ export default function ProductionPage() {
                       QC PASSED
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                    <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                       INSPECTION PENDING
                     </span>
                   )}
@@ -1015,7 +1015,7 @@ export default function ProductionPage() {
                         onChange={(e) =>
                           setQcState((prev) => ({ ...prev, [chk.key]: e.target.checked }))
                         }
-                        className="w-4 h-4 text-orange-600 rounded border-zinc-300 focus:ring-orange-500"
+                        className="w-4 h-4 text-blue-600 rounded border-zinc-300 focus:ring-blue-500"
                       />
                       <span className="text-zinc-800 dark:text-zinc-200">{chk.label}</span>
                     </label>
@@ -1048,7 +1048,7 @@ export default function ProductionPage() {
                   type="button"
                   disabled={savingQc}
                   onClick={handleSaveQC}
-                  className="w-full py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-xs transition-all"
+                  className="w-full py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-all"
                 >
                   {savingQc ? "Saving Sign-off..." : "Submit Quality Check Audit & Advance"}
                 </button>

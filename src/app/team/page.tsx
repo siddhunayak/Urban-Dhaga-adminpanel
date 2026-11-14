@@ -34,9 +34,9 @@ interface AuditEntry {
 }
 
 const ROLE_BADGES: Record<string, string> = {
-  OWNER: "bg-orange-500/10 text-orange-600 border-orange-500/20",
+  OWNER: "bg-blue-500/10 text-blue-600 border-blue-500/20",
   SALES: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  PRODUCTION: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  PRODUCTION: "bg-blue-500/10 text-blue-600 border-blue-500/20",
   ACCOUNTS: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   STAFF: "bg-zinc-500/10 text-zinc-600 border-zinc-500/20",
 };
@@ -165,7 +165,7 @@ export default function TeamPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
-            <ShieldCheck className="w-6 h-6 text-orange-600" />
+            <ShieldCheck className="w-6 h-6 text-blue-600" />
             <span>Team Access & Audit Trail</span>
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -202,7 +202,7 @@ export default function TeamPage() {
           {isOwner && tab === "team" && (
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Staff</span>
@@ -213,7 +213,7 @@ export default function TeamPage() {
 
       {loading ? (
         <div className="p-12 text-center text-zinc-400">
-          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-orange-600" />
+          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
           <span className="text-xs font-mono">Loading access controls...</span>
         </div>
       ) : tab === "team" ? (
@@ -325,7 +325,7 @@ export default function TeamPage() {
                   <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 shrink-0">
                     {entry.entityType}
                   </span>
-                  <span className="text-[10px] font-mono text-orange-600 shrink-0">
+                  <span className="text-[10px] font-mono text-blue-600 shrink-0">
                     {entry.action}
                   </span>
                   <span className="text-zinc-800 dark:text-zinc-200 truncate">
@@ -435,7 +435,7 @@ export default function TeamPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg"
+                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
               >
                 {saving ? "Creating..." : "Create Account"}
               </button>

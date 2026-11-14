@@ -68,9 +68,9 @@ export function generateQuotationPDF(data: QuotationPDFData): jsPDF {
     format: "a4",
   });
 
-  // Primary Terracotta & Slate Palette
+  // Primary Corporate Slate & Blue Palette
   const brandDark = [24, 24, 27]; // #18181b
-  const brandAccent = [194, 65, 12]; // #c2410c (Terracotta)
+  const brandAccent = [37, 99, 235]; // #2563eb (Corporate Blue)
   const textMuted = [113, 113, 122]; // #71717a
   const borderLight = [228, 228, 231];
 
@@ -302,7 +302,7 @@ export function generateJobSheetPDF(data: JobSheetPDFData): jsPDF {
   });
 
   const brandDark = [24, 24, 27];
-  const brandAmber = [217, 119, 6]; // #d97706
+  const brandAmber = [30, 64, 175]; // #1e40af (Executive Navy Blue)
   const textMuted = [113, 113, 122];
 
   // Header Bar
@@ -467,7 +467,7 @@ export function generateTaxInvoicePDF(data: TaxInvoicePDFData): jsPDF {
   });
 
   const brandDark = [24, 24, 27];
-  const brandAccent = [194, 65, 12];
+  const brandAccent = [37, 99, 235]; // #2563eb (Corporate Blue)
   const textMuted = [113, 113, 122];
   const borderLight = [228, 228, 231];
 

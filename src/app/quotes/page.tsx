@@ -196,7 +196,7 @@ export default function QuotationsPage() {
 
         <Link
           href="/quotes/new"
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm shadow-orange-600/30 transition-all self-start sm:self-auto"
+          className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-all self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>New Quotation</span>
@@ -258,7 +258,7 @@ export default function QuotationsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by quote # or client..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-orange-500"
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <button
@@ -290,7 +290,7 @@ export default function QuotationsPage() {
               {loading ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-zinc-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-orange-600" />
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
                     <span>Loading quotations...</span>
                   </td>
                 </tr>
@@ -386,7 +386,7 @@ export default function QuotationsPage() {
                           title="Download Official PDF Estimate"
                           className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors inline-flex items-center gap-1 text-[11px] font-medium"
                         >
-                          <FileDown className="w-3.5 h-3.5 text-orange-600" />
+                          <FileDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                           <span>PDF</span>
                         </button>
 

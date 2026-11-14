@@ -60,7 +60,7 @@ export function Header({ onOpenCommand }: HeaderProps) {
 
           <Link
             href="/quotes/new"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 rounded-lg shadow-sm shadow-orange-600/20 transition-all active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-all active:scale-[0.98]"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Create Quote</span>

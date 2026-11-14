@@ -404,7 +404,7 @@ export default function NewQuotationPage() {
             onClick={handlePreviewPDF}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors"
           >
-            <FileDown className="w-3.5 h-3.5 text-orange-600" />
+            <FileDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Preview & Download PDF</span>
           </button>
 
@@ -421,7 +421,7 @@ export default function NewQuotationPage() {
             type="button"
             disabled={submitting}
             onClick={() => handleSubmit("SENT")}
-            className="px-4 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm shadow-orange-600/30 transition-all active:scale-95"
+            className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-all active:scale-95"
           >
             {submitting ? "Submitting..." : "Generate & Issue Estimate"}
           </button>
@@ -435,7 +435,7 @@ export default function NewQuotationPage() {
           <div className="p-5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-orange-600" />
+                <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>Client & Commercial Entity</span>
               </h2>
 
@@ -464,7 +464,7 @@ export default function NewQuotationPage() {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="e.g. Razorpay Software Pvt Ltd"
-                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-orange-500"
+                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -476,7 +476,7 @@ export default function NewQuotationPage() {
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="e.g. Divya Krishnan"
-                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-orange-500"
+                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -487,7 +487,7 @@ export default function NewQuotationPage() {
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
                   placeholder="e.g. divya@razorpay.com"
-                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-orange-500"
+                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -498,7 +498,7 @@ export default function NewQuotationPage() {
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
                   placeholder="e.g. +91 98450 77889"
-                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-orange-500"
+                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -509,7 +509,7 @@ export default function NewQuotationPage() {
                   value={clientGstin}
                   onChange={(e) => setClientGstin(e.target.value)}
                   placeholder="e.g. 29AABCR8765G1Z9"
-                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono focus:ring-1 focus:ring-orange-500 uppercase"
+                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono focus:ring-1 focus:ring-blue-500 uppercase"
                 />
               </div>
 
@@ -520,7 +520,7 @@ export default function NewQuotationPage() {
                   value={shippingAddress}
                   onChange={(e) => setShippingAddress(e.target.value)}
                   placeholder="Delivery address & pincode"
-                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-orange-500"
+                  className="mt-1 w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -531,7 +531,7 @@ export default function NewQuotationPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-orange-600" />
+                  <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span>Itemized Merchandising & Slabs</span>
                 </h2>
                 <p className="text-xs text-zinc-500">
@@ -542,7 +542,7 @@ export default function NewQuotationPage() {
               <button
                 type="button"
                 onClick={addItem}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-lg transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Item</span>
@@ -622,7 +622,7 @@ export default function NewQuotationPage() {
                           min="1"
                           value={item.quantity}
                           onChange={(e) => handleQuantityChange(idx, Number(e.target.value))}
-                          className="w-20 text-center px-2 py-1 text-xs font-mono font-bold bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md focus:ring-1 focus:ring-orange-500"
+                          className="w-20 text-center px-2 py-1 text-xs font-mono font-bold bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md focus:ring-1 focus:ring-blue-500"
                         />
                         <span className="font-mono text-zinc-500">units</span>
                       </div>
@@ -639,7 +639,7 @@ export default function NewQuotationPage() {
                             min="0"
                             value={item.sizeBreakdown[size] || 0}
                             onChange={(e) => handleSizeChange(idx, size, Number(e.target.value))}
-                            className="w-full text-center px-2 py-1.5 text-xs font-mono bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md focus:ring-1 focus:ring-orange-500"
+                            className="w-full text-center px-2 py-1.5 text-xs font-mono bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md focus:ring-1 focus:ring-blue-500"
                           />
                         </div>
                       ))}
@@ -668,7 +668,7 @@ export default function NewQuotationPage() {
         <div className="space-y-6">
           <div className="p-5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-sm space-y-4">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-orange-600" />
+              <Calculator className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>Commercial Terms & Tax</span>
             </h3>
 
@@ -767,12 +767,12 @@ export default function NewQuotationPage() {
 
               <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between text-sm font-bold text-zinc-900 dark:text-zinc-100">
                 <span>Total Payable:</span>
-                <span className="text-orange-600 dark:text-orange-400">
+                <span className="text-blue-600 dark:text-blue-400">
                   {formatCurrency(grandTotal)}
                 </span>
               </div>
 
-              <div className="pt-2 text-[11px] text-zinc-500 bg-amber-500/5 p-2 rounded-lg border border-amber-500/20">
+              <div className="pt-2 text-[11px] text-zinc-500 bg-blue-500/5 p-2 rounded-lg border border-blue-500/20">
                 <span className="font-semibold text-zinc-800 dark:text-zinc-200">
                   Advance Trigger ({advancePercent}%):
                 </span>{" "}
@@ -784,7 +784,7 @@ export default function NewQuotationPage() {
               type="button"
               disabled={submitting}
               onClick={() => handleSubmit("SENT")}
-              className="w-full py-2.5 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm shadow-orange-600/30 transition-all text-center"
+              className="w-full py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-all text-center"
             >
               Issue Quotation to Client
             </button>

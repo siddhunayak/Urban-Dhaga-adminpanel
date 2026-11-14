@@ -114,7 +114,7 @@ export default function InventoryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
-            <Boxes className="w-6 h-6 text-orange-600" />
+            <Boxes className="w-6 h-6 text-blue-600" />
             <span>Variant-Level Stock Matrix</span>
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -197,7 +197,7 @@ export default function InventoryPage() {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchInventory()}
             placeholder="Search SKU, color, or item..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-orange-500"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -222,7 +222,7 @@ export default function InventoryPage() {
               {loading ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-zinc-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-orange-600" />
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
                     <span>Loading warehouse stock levels...</span>
                   </td>
                 </tr>
@@ -302,7 +302,7 @@ export default function InventoryPage() {
                             setModalItem(v);
                             setAdjustQty(v.reorderQuantity || 50);
                           }}
-                          className="px-2.5 py-1 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-md transition-colors"
+                          className="px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors"
                         >
                           + Inward / Adjust
                         </button>
@@ -358,7 +358,7 @@ export default function InventoryPage() {
                       onClick={() => setAdjustmentType(act.key)}
                       className={`py-1.5 px-2 rounded-lg font-medium border text-center transition-colors ${
                         adjustmentType === act.key
-                          ? "bg-orange-600 text-white border-orange-600"
+                          ? "bg-blue-600 text-white border-blue-600"
                           : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300"
                       }`}
                     >
@@ -428,7 +428,7 @@ export default function InventoryPage() {
               <button
                 type="submit"
                 disabled={adjusting}
-                className="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm"
+                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm"
               >
                 {adjusting ? "Updating..." : "Confirm Stock Adjustment"}
               </button>

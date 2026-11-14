@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Sparkles, Lock, Mail, ArrowRight, ShieldCheck } from "lucide-react";
+import { Lock, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 
 const DEMO_ACCOUNTS = [
   { label: "Owner / Admin", email: "arjun@urbandhaga.com", role: "OWNER" },
@@ -52,13 +52,13 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Brand Identity */}
         <div className="text-center space-y-2">
-          <div className="w-11 h-11 mx-auto rounded-xl bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center text-white shadow-md shadow-orange-600/20">
-            <Sparkles className="w-6 h-6 text-amber-100" />
+          <div className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-mono font-semibold tracking-wider uppercase mb-1">
+            Enterprise Admin Portal
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Urban Dhaga Admin
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-sans">
+            Urban Dhaga
           </h1>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-500 max-w-xs mx-auto">
             Internal Operations, Quotations & Production Control
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@urbandhaga.com"
-              className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-orange-500"
+              className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -94,14 +94,14 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your staff password"
-              className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-orange-500"
+              className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs focus:outline-hidden focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 text-xs font-semibold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 rounded-lg shadow-sm shadow-orange-600/20 flex items-center justify-center gap-1.5 transition-all active:scale-[0.99] disabled:opacity-60"
+            className="w-full py-2.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 flex items-center justify-center gap-1.5 transition-all active:scale-[0.99] disabled:opacity-60"
           >
             <span>{loading ? "Signing in..." : "Sign In to Workspace"}</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ export default function LoginPage() {
                   setEmail(acc.email);
                   setPassword("urbandhaga2026");
                 }}
-                className="p-2 text-left rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-orange-500/40 hover:bg-orange-500/5 transition-colors"
+                className="p-2 text-left rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/40 hover:bg-blue-500/5 transition-colors"
               >
                 <div className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200">
                   {acc.label}
