@@ -1,71 +1,74 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { Search, Plus, UserPlus } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Plus, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+
+/** Pages listen for this event to re-fetch their data when the header refresh button is clicked. */
+export const APP_REFRESH_EVENT = "app:refresh";
+
+const TITLES: [string, string][] = [
+  ["/orders/new", "New Order"],
+  ["/orders/", "Order Details"],
+  ["/orders", "Master Orders Register"],
+  ["/fulfilment", "Fulfilment"],
+  ["/production", "Production Board"],
+  ["/customers", "Customers"],
+  ["/payments", "Payments"],
+  ["/invoices", "Invoices & Ledger"],
+  ["/quotes", "Quotations"],
+  ["/leads", "Leads & Inquiries"],
+  ["/products", "Products"],
+  ["/inventory", "Inventory"],
+  ["/vendors", "Vendors"],
+  ["/team", "Team & Audit Log"],
+];
 
 interface HeaderProps {
+  /** Kept for API compatibility; the command palette is opened with Ctrl/Cmd+K. */
   onOpenCommand?: () => void;
 }
 
-export function Header({ onOpenCommand }: HeaderProps) {
+export function Header({}: HeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [spinning, setSpinning] = useState(false);
 
-  const getBreadcrumb = () => {
-    if (pathname.startsWith("/production")) return "Production & Orders";
-    if (pathname.startsWith("/quotes")) return "Quotations & Estimates";
-    if (pathname.startsWith("/leads")) return "Leads & Inquiries";
-    if (pathname.startsWith("/products")) return "Catalog & Slabs";
-    if (pathname.startsWith("/inventory")) return "Stock & Inventory";
-    if (pathname.startsWith("/customers")) return "Corporate Clients";
-    if (pathname.startsWith("/vendors")) return "Vendors & Workshops";
-    if (pathname.startsWith("/invoices")) return "Invoices & Payments";
-    if (pathname.startsWith("/team")) return "Team & Audit Log";
-    return "Operations Dashboard";
+  const title = TITLES.find(([prefix]) => pathname.startsWith(prefix))?.[1] ?? "Operations Dashboard";
+
+  const handleRefresh = () => {
+    setSpinning(true);
+    window.dispatchEvent(new Event(APP_REFRESH_EVENT));
+    router.refresh();
+    setTimeout(() => setSpinning(false), 700);
   };
 
   return (
-    <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur sticky top-0 z-20 flex items-center justify-between px-6">
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-zinc-400 font-mono">Urban Dhaga</span>
-        <span className="text-zinc-300 dark:text-zinc-700">/</span>
-        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          {getBreadcrumb()}
+    <header className="h-[72px] border-b border-zinc-200 bg-white sticky top-0 z-20 flex items-center justify-between px-7 shrink-0">
+      <div className="flex items-center gap-3">
+        <h1 className="text-[17px] font-semibold text-zinc-900 tracking-tight">{title}</h1>
+        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100">
+          Live v1.0
         </span>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={onOpenCommand}
-          className="flex items-center gap-3 px-3 py-1.5 text-xs text-zinc-500 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors group"
+          onClick={handleRefresh}
+          title="Refresh"
+          className="w-7 h-7 flex items-center justify-center rounded-md border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <Search className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300" />
-            <span>Search orders, quotes, SKUs...</span>
-          </div>
-          <kbd className="hidden sm:inline-block font-mono text-[10px] bg-white dark:bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700">
-            ⌘K
-          </kbd>
+          <RefreshCw className={`w-3.5 h-3.5 ${spinning ? "animate-spin" : ""}`} />
         </button>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href="/leads?new=1"
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-850 rounded-lg transition-colors"
-          >
-            <UserPlus className="w-3.5 h-3.5 text-zinc-500" />
-            <span>New Lead</span>
-          </Link>
-
-          <Link
-            href="/quotes/new"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 rounded-lg shadow-sm shadow-orange-600/20 transition-all active:scale-[0.98]"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Create Quote</span>
-          </Link>
-        </div>
+        <Link
+          href="/orders/new"
+          className="flex items-center gap-1.5 h-7 px-3 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 rounded-md transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>New Order</span>
+        </Link>
       </div>
     </header>
   );

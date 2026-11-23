@@ -41,6 +41,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const orderCount = await prisma.order.count({ where: { customerId: id } });
+    if (orderCount > 0) {
+      return NextResponse.json(
+        { error: `This customer has ${orderCount} order(s) and can't be deleted` },
+        { status: 409 }
+      );
+    }
+    await prisma.quotation.updateMany({ where: { customerId: id }, data: { customerId: null } });
     await prisma.customer.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -6,7 +6,7 @@ export async function GET() {
     const [
       orders,
       leads,
-      productsCount,
+      products,
       variants,
       recentActivities,
       quotations,
@@ -16,13 +16,14 @@ export async function GET() {
           items: true,
           qualityCheck: true,
           shipment: true,
+          mockups: { select: { approvalStatus: true } },
         },
         orderBy: { createdAt: "desc" },
       }),
       prisma.lead.findMany({
         orderBy: { createdAt: "desc" },
       }),
-      prisma.product.count({ where: { isActive: true } }),
+      prisma.product.findMany({ select: { name: true, sku: true, category: true, isActive: true } }),
       prisma.productVariant.findMany({
         include: {
           product: {
@@ -38,6 +39,50 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
       }),
     ]);
+
+    const productsCount = products.filter((p) => p.isActive).length;
+
+    // ---- OMS dashboard metrics ----
+    const FULFILMENT_STAGES = ["IN_PRODUCTION", "QUALITY_CHECK", "READY_FOR_DISPATCH", "DISPATCHED"];
+    const liveOrders = orders.filter((o) => o.stage !== "CANCELLED");
+    const openOrders = orders.filter((o) => o.stage !== "DELIVERED" && o.stage !== "CANCELLED");
+
+    const categoryFor = (items: { productName: string; sku: string | null }[]) => {
+      for (const item of items) {
+        const byName = products.find((p) => p.name.toLowerCase() === item.productName.toLowerCase());
+        if (byName) return byName.category;
+        const bySku = item.sku ? products.find((p) => item.sku!.startsWith(p.sku)) : undefined;
+        if (bySku) return bySku.category;
+      }
+      return null;
+    };
+
+    const oms = {
+      totalOrders: liveOrders.length,
+      openOrders: openOrders.length,
+      confirmedOrders: orders.filter((o) => o.stage === "ORDER_CONFIRMED").length,
+      inFulfilment: orders.filter((o) => FULFILMENT_STAGES.includes(o.stage)).length,
+      totalOrderValue: liveOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0),
+      amountReceived: liveOrders.reduce((acc, o) => acc + (o.advancePaid || 0), 0),
+      outstandingReceivables: liveOrders.reduce((acc, o) => acc + (o.balanceDue || 0), 0),
+      designApprovalsPending: liveOrders.reduce(
+        (acc, o) => acc + o.mockups.filter((m) => m.approvalStatus === "PENDING_REVIEW").length,
+        0
+      ),
+      recentActiveOrders: openOrders.slice(0, 10).map((o) => ({
+        id: o.id,
+        orderNumber: o.orderNumber,
+        companyName: o.companyName,
+        contactPerson: o.contactPerson,
+        category: categoryFor(o.items),
+        stage: o.stage,
+        paymentStatus: o.paymentStatus,
+        qcPassed: o.qualityCheck?.passed ?? null,
+        shipmentStatus: o.shipment?.status ?? null,
+        targetDeliveryDate: o.targetDeliveryDate,
+        totalAmount: o.totalAmount,
+      })),
+    };
 
     // Calculate revenue metrics
     const totalRevenue = orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
@@ -126,6 +171,7 @@ export async function GET() {
         productsCount,
         quotationsCount: quotations.length,
       },
+      oms,
       ordersByStage,
       recentOrders: orders.slice(0, 5),
       lowStockItems,
