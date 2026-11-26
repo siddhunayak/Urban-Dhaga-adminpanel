@@ -2,91 +2,57 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  Factory,
-  FileSpreadsheet,
-  Inbox,
-  Package,
-  Boxes,
-  Building2,
-  Users2,
-  ShieldCheck,
-  Receipt,
-  LogOut,
-  Shield,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { Layers, Package, Users, CreditCard, Truck, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   name: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badgeKey?: string;
-  alert?: boolean;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
 }
 
-interface NavGroup {
-  group: string;
-  items: NavItem[];
-}
-
-const NAV_ITEMS: NavGroup[] = [
-  {
-    group: "OPERATIONS",
-    items: [
-      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { name: "Production & Orders", href: "/production", icon: Factory, badgeKey: "activeOrders" },
-      { name: "Quotations & Estimates", href: "/quotes", icon: FileSpreadsheet },
-      { name: "Invoices & Ledger", href: "/invoices", icon: Receipt },
-      { name: "Leads & Inquiries", href: "/leads", icon: Inbox, badgeKey: "newLeads" },
-    ],
-  },
-  {
-    group: "CATALOG & INVENTORY",
-    items: [
-      { name: "Products & Slabs", href: "/products", icon: Package },
-      { name: "Inventory Matrix", href: "/inventory", icon: Boxes, badgeKey: "lowStock", alert: true },
-    ],
-  },
-  {
-    group: "DIRECTORY & PARTNERS",
-    items: [
-      { name: "Corporate Clients", href: "/customers", icon: Building2 },
-      { name: "Vendors & Workshops", href: "/vendors", icon: Users2 },
-      { name: "Team & Audit Log", href: "/team", icon: Shield },
-    ],
-  },
+const NAV_ITEMS: NavItem[] = [
+  { name: "Dashboard", href: "/dashboard", icon: Layers },
+  { name: "Orders Register", href: "/orders", icon: Package },
+  { name: "Customers", href: "/customers", icon: Users },
+  { name: "Payments", href: "/payments", icon: CreditCard },
+  { name: "Fulfilment", href: "/fulfilment", icon: Truck },
 ];
+
+export function BrandMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 32" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M3 9c2 9 4 17 9 17 6 0 7-11 9-17 1.5-4.5 5-9 9-9"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M17 26c4-1 9-8 13-16 2-4 4-7 7-8"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        opacity="0.85"
+      />
+    </svg>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [counts, setCounts] = useState<{ activeOrders?: number; lowStock?: number; newLeads?: number }>({});
-  const [user, setUser] = useState<{ name: string; role: string; department: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
 
   useEffect(() => {
-    fetch("/api/dashboard/stats")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.metrics) {
-          setCounts({
-            activeOrders: data.metrics.activeOrdersCount,
-            lowStock: data.metrics.lowStockCount,
-            newLeads: data.metrics.totalLeads,
-          });
-        }
-      })
-      .catch(() => {});
-
     fetch("/api/auth/me")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.user) setUser(data.user);
       })
       .catch(() => {});
-  }, [pathname]);
+  }, []);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -94,127 +60,50 @@ export function Sidebar() {
     router.refresh();
   };
 
-  const initials = (user?.name || "Admin")
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
   return (
-    <aside className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col h-screen select-none shrink-0 sticky top-0">
-      {/* Brand Header */}
-      <div className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 justify-between">
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-sm tracking-tight truncate">
-              Urban Dhaga
-            </span>
-            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-500/20">
-              Admin
-            </span>
-          </div>
-          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
-            Corporate Merchandising & Ops
-          </span>
-        </div>
+    <aside className="w-[200px] border-r border-zinc-200 bg-white flex flex-col h-screen select-none shrink-0 sticky top-0">
+      {/* Brand */}
+      <div className="h-[72px] flex items-center gap-2 px-4">
+        <BrandMark className="w-9 h-8 text-blue-600" />
+        <span className="font-bold text-[15px] tracking-wide text-zinc-900">URBANDHAGAA</span>
       </div>
 
-      {/* Navigation Groups */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-        {NAV_ITEMS.map((group) => (
-          <div key={group.group} className="space-y-1">
-            <div className="px-3 text-[10px] font-mono tracking-wider text-zinc-400 dark:text-zinc-500 uppercase font-semibold">
-              {group.group}
-            </div>
-            <div className="space-y-0.5 pt-1">
-              {group.items.map((item) => {
-                const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-                const Icon = item.icon;
-                const badgeCount = item.badgeKey ? counts[item.badgeKey as keyof typeof counts] : undefined;
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-2.5 pt-3 space-y-0.5">
+        {NAV_ITEMS.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors",
+                isActive
+                  ? "bg-zinc-100 text-zinc-900 font-semibold"
+                  : "text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900"
+              )}
+            >
+              <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-zinc-900" : "text-zinc-500")} strokeWidth={1.75} />
+              <span className="truncate">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all group",
-                      isActive
-                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm"
-                        : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <Icon
-                        className={cn(
-                          "w-4 h-4 shrink-0 transition-colors",
-                          isActive
-                            ? "text-white dark:text-zinc-900"
-                            : "text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
-                        )}
-                      />
-                      <span className="truncate">{item.name}</span>
-                    </div>
-
-                    {badgeCount !== undefined && badgeCount > 0 && (
-                      <span
-                        className={cn(
-                          "text-[10px] font-mono px-1.5 py-0.5 rounded-full font-semibold",
-                          item.alert
-                            ? "bg-red-500/10 text-red-600 border border-red-500/20"
-                            : isActive
-                            ? "bg-zinc-700 text-zinc-200 dark:bg-zinc-300 dark:text-zinc-800"
-                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                        )}
-                      >
-                        {badgeCount}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Production Line Quick Status */}
-      <div className="p-3 mx-3 mb-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 font-medium text-zinc-700 dark:text-zinc-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Peenya Facility</span>
-          </div>
-          <span className="text-[10px] text-zinc-400 font-mono">LIVE</span>
-        </div>
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
-          Printing: Line 1 & 2 Active • QC Gate 4
-        </p>
-      </div>
-
-      {/* Authenticated Staff Footer */}
-      <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-blue-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
-            {initials}
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">
-              {user?.name || "Loading..."}
-            </span>
-            <span className="text-[10px] text-zinc-400 truncate flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
-              {user ? `${user.role} • ${user.department}` : "Staff Session"}
-            </span>
-          </div>
+      {/* Footer */}
+      <div className="px-3 py-4 border-t border-zinc-200 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold text-zinc-900 truncate">{user?.name || "UrbanDhagaa Admin"}</div>
+          <div className="text-[10px] text-zinc-500 uppercase tracking-wide truncate">{user?.role || "Admin"}</div>
         </div>
         <button
           type="button"
           onClick={handleLogout}
-          title="Sign Out"
-          className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-500/10 transition-colors shrink-0"
+          title="Sign out"
+          className="w-7 h-7 flex items-center justify-center rounded-md border border-zinc-200 text-zinc-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors shrink-0"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-3.5 h-3.5" />
         </button>
       </div>
     </aside>

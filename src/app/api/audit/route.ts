@@ -10,6 +10,10 @@ export async function GET(request: Request) {
     if (entityType && entityType !== "ALL") {
       where.entityType = entityType;
     }
+    const entityId = searchParams.get("entityId");
+    if (entityId) {
+      where.entityId = entityId;
+    }
 
     const logs = await prisma.activityLog.findMany({
       where,

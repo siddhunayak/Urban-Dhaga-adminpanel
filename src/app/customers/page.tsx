@@ -1,15 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
-import {
-  Building2,
-  Plus,
-  Search,
-  X,
-  RefreshCw,
-} from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { cn, formatCurrency, formatDate, ORDER_STAGES } from "@/lib/utils";
+import { APP_REFRESH_EVENT } from "@/components/layout/header";
+import { Badge, Button, Card, EmptyRow, Field, Modal, inputCls, thCls, theadRowCls, apiError } from "@/components/ui";
 
 interface Customer {
   id: string;
@@ -23,386 +20,293 @@ interface Customer {
   city?: string | null;
   state?: string | null;
   pincode?: string | null;
-  totalOrders: number;
-  totalSpend: number;
   notes?: string | null;
-  orders: Array<{ id: string; orderNumber: string; totalAmount: number; stage: string }>;
+  createdAt: string;
+  orders: { id: string; orderNumber: string; totalAmount: number; stage: string; createdAt: string }[];
 }
+
+type Form = Omit<Customer, "id" | "customerCode" | "createdAt" | "orders">;
+const EMPTY: Form = { companyName: "", contactPerson: "", email: "", phone: "", gstin: "", address: "", city: "", state: "", pincode: "", notes: "" };
+const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [editing, setEditing] = useState<{ id: string | null; form: Form } | null>(null);
+  const [viewing, setViewing] = useState<Customer | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [formData, setFormData] = useState({
-    companyName: "",
-    contactPerson: "",
-    email: "",
-    phone: "",
-    gstin: "",
-    address: "",
-    city: "Bangalore",
-    state: "Karnataka",
-    pincode: "560038",
-    notes: "",
-  });
-
-  const fetchCustomers = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
-      const url = new URL("/api/customers", window.location.origin);
-      if (search) url.searchParams.set("search", search);
-
-      const res = await fetch(url.toString());
-      const data = await res.json();
-      setCustomers(data);
-    } catch (err) {
-      console.error(err);
+      const res = await fetch("/api/customers", { cache: "no-store" });
+      if (!res.ok) throw new Error();
+      const list: Customer[] = await res.json();
+      setCustomers(list);
+      return list;
+    } catch {
+      toast.error("Couldn't load customers");
+      return [];
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchCustomers();
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [fetchCustomers]);
+    load().then((list) => {
+      // Deep link from an order page: /customers?focus=<id>
+      const focus = new URLSearchParams(window.location.search).get("focus");
+      const c = focus && list.find((x) => x.id === focus);
+      if (c) setViewing(c);
+    });
+    window.addEventListener(APP_REFRESH_EVENT, load);
+    return () => window.removeEventListener(APP_REFRESH_EVENT, load);
+  }, [load]);
 
-  const handleCreateCustomer = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return customers
+      .map((c) => {
+        const live = c.orders.filter((o) => o.stage !== "CANCELLED");
+        return { ...c, orderCount: live.length, spend: live.reduce((s, o) => s + o.totalAmount, 0) };
+      })
+      .filter(
+        (c) =>
+          !q ||
+          [c.customerCode, c.companyName, c.contactPerson, c.email, c.phone, c.gstin ?? "", c.city ?? ""].join(" ").toLowerCase().includes(q)
+      );
+  }, [customers, search]);
+
+  const save = async () => {
+    if (!editing) return;
+    const f = editing.form;
+    if (!f.companyName.trim() || !f.contactPerson.trim() || !f.email.trim() || !f.phone.trim())
+      return toast.error("Company, contact person, email and phone are required");
+    if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) return toast.error("Enter a valid email");
+    const gstin = (f.gstin ?? "").trim().toUpperCase();
+    if (gstin && !GSTIN_RE.test(gstin)) return toast.error("GSTIN should be 15 characters, e.g. 29ABCDE1234F1Z5");
+
+    setSaving(true);
     try {
-      setSaving(true);
-      const res = await fetch("/api/customers", {
-        method: "POST",
+      const res = await fetch(editing.id ? `/api/customers/${editing.id}` : "/api/customers", {
+        method: editing.id ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...f, gstin: gstin || null }),
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to register client");
-        return;
-      }
-
-      toast.success(`Registered ${data.companyName} (${data.customerCode})`);
-      setShowAddModal(false);
-      setFormData({
-        companyName: "",
-        contactPerson: "",
-        email: "",
-        phone: "",
-        gstin: "",
-        address: "",
-        city: "Bangalore",
-        state: "Karnataka",
-        pincode: "560038",
-        notes: "",
-      });
-      fetchCustomers();
+      if (!res.ok) throw new Error(await apiError(res, "Couldn't save customer"));
+      toast.success(editing.id ? "Customer updated" : "Customer added");
+      setEditing(null);
+      load();
     } catch (err) {
-      console.error(err);
-      toast.error("Network error creating client");
+      toast.error(err instanceof Error ? err.message : "Couldn't save customer");
     } finally {
       setSaving(false);
     }
   };
 
-  const totalClients = customers.length;
-  const totalLifetimeGMV = customers.reduce((acc, c) => acc + c.totalSpend, 0);
+  const remove = async (c: Customer) => {
+    if (!confirm(`Delete ${c.companyName}?`)) return;
+    const res = await fetch(`/api/customers/${c.id}`, { method: "DELETE" });
+    if (!res.ok) return toast.error(await apiError(res, "Couldn't delete customer"));
+    toast.success("Customer deleted");
+    load();
+  };
+
+  const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setEditing((ed) => (ed ? { ...ed, form: { ...ed.form, [k]: e.target.value } } : ed));
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
-            <Building2 className="w-6 h-6 text-blue-600" />
-            <span>Corporate Clients & Accounts</span>
-          </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            B2B accounts directory with GSTIN registration, delivery addresses, and cumulative merchandise spend.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-all self-start sm:self-auto"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Register Client Account</span>
-        </button>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-sm">
-          <span className="text-xs text-zinc-500">Corporate Accounts</span>
-          <div className="text-xl font-bold font-mono text-zinc-900 dark:text-zinc-100 mt-1">
-            {totalClients} Companies
+    <div className="p-7 space-y-5">
+      <Card>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
+          <div className="relative w-full sm:w-[260px]">
+            <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, code, GSTIN, city.." className={inputCls + " pl-8"} />
           </div>
-          <span className="text-[11px] text-zinc-400">Verified GST registered businesses</span>
+          <Button variant="primary" onClick={() => setEditing({ id: null, form: { ...EMPTY } })}>
+            <Plus className="w-3.5 h-3.5" /> Add Customer
+          </Button>
         </div>
-
-        <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-sm">
-          <span className="text-xs text-zinc-500">Cumulative Lifetime GMV</span>
-          <div className="text-xl font-bold font-mono text-zinc-900 dark:text-zinc-100 mt-1">
-            {formatCurrency(totalLifetimeGMV)}
-          </div>
-          <span className="text-[11px] text-zinc-400">Total B2B apparel & kits fulfilled</span>
-        </div>
-
-        <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-sm">
-          <span className="text-xs text-zinc-500">Avg Account Spend</span>
-          <div className="text-xl font-bold font-mono text-zinc-900 dark:text-zinc-100 mt-1">
-            {formatCurrency(totalClients > 0 ? totalLifetimeGMV / totalClients : 0)}
-          </div>
-          <span className="text-[11px] text-zinc-400">Repeat customer lifetime value</span>
-        </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="flex items-center justify-between p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-        <div className="relative w-full max-w-sm">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && fetchCustomers()}
-            placeholder="Search company, SPOC, GSTIN..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-
-        <button
-          onClick={fetchCustomers}
-          className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 text-zinc-600 dark:text-zinc-400"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Customer Directory Table */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-50 dark:bg-zinc-850 border-b border-zinc-200 dark:border-zinc-800 font-mono uppercase text-zinc-500 text-[10px]">
-              <tr>
-                <th className="px-4 py-3">Client Code</th>
-                <th className="px-4 py-3">Company & GSTIN</th>
-                <th className="px-4 py-3">Primary SPOC</th>
-                <th className="px-4 py-3">Registered City</th>
-                <th className="px-4 py-3 text-center">Orders</th>
-                <th className="px-4 py-3 text-right">Lifetime Spend</th>
-                <th className="px-4 py-3">Notes & Standards</th>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className={cn(theadRowCls, "border-t")}>
+                <th className={thCls}>Code</th>
+                <th className={thCls}>Customer</th>
+                <th className={thCls}>Contact</th>
+                <th className={thCls}>GSTIN</th>
+                <th className={thCls}>City</th>
+                <th className={cn(thCls, "text-right")}>Orders</th>
+                <th className={cn(thCls, "text-right")}>Order Value</th>
+                <th className={cn(thCls, "text-right")}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-zinc-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
-                    <span>Loading corporate clients...</span>
+            <tbody>
+              {rows.map((c) => (
+                <tr key={c.id} onClick={() => setViewing(c)} className="border-b border-zinc-100 last:border-0 hover:bg-zinc-50/70 cursor-pointer">
+                  <td className="px-4 py-3 font-mono text-zinc-700 whitespace-nowrap">{c.customerCode}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-zinc-900">{c.companyName}</div>
+                    <div className="text-[11px] text-zinc-500">{c.contactPerson}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="text-zinc-700">{c.email}</div>
+                    <div className="text-[11px] text-zinc-500">{c.phone}</div>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-zinc-700">{c.gstin || "—"}</td>
+                  <td className="px-4 py-3 text-zinc-700">{c.city || "—"}</td>
+                  <td className="px-4 py-3 text-right font-mono">{c.orderCount}</td>
+                  <td className="px-4 py-3 text-right font-mono font-medium">{formatCurrency(c.spend)}</td>
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" className="h-7 px-2" title="Edit" onClick={() => setEditing({ id: c.id, form: pick(c) })}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" className="h-7 px-2 hover:text-red-700" title="Delete" onClick={() => remove(c)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
-              ) : customers.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-zinc-400">
-                    No client records found.
-                  </td>
-                </tr>
-              ) : (
-                customers.map((c) => (
-                  <tr
-                    key={c.id}
-                    className="hover:bg-zinc-50/60 dark:hover:bg-zinc-850/50 transition-colors"
-                  >
-                    <td className="px-4 py-3.5 font-mono font-semibold text-zinc-900 dark:text-zinc-100">
-                      {c.customerCode}
-                    </td>
-
-                    <td className="px-4 py-3.5">
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-100">
-                        {c.companyName}
-                      </div>
-                      {c.gstin ? (
-                        <div className="text-[10px] font-mono text-blue-600 dark:text-blue-400">
-                          GSTIN: {c.gstin}
-                        </div>
-                      ) : (
-                        <div className="text-[10px] text-zinc-400">Unregistered GST</div>
-                      )}
-                    </td>
-
-                    <td className="px-4 py-3.5">
-                      <div className="font-medium text-zinc-800 dark:text-zinc-200">
-                        {c.contactPerson}
-                      </div>
-                      <div className="text-[11px] text-zinc-500">
-                        {c.phone} • {c.email}
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300">
-                      <div>{c.city || "Bangalore"}, {c.state || "KA"}</div>
-                      <div className="text-[10px] text-zinc-400 truncate max-w-xs">{c.address}</div>
-                    </td>
-
-                    <td className="px-4 py-3.5 text-center font-mono font-bold text-zinc-800 dark:text-zinc-200">
-                      {c.totalOrders}
-                    </td>
-
-                    <td className="px-4 py-3.5 text-right font-mono font-bold text-zinc-900 dark:text-zinc-100">
-                      {formatCurrency(c.totalSpend)}
-                    </td>
-
-                    <td className="px-4 py-3.5 text-zinc-500 text-[11px] max-w-xs truncate">
-                      {c.notes || "Standard B2B terms."}
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
+              {rows.length === 0 && <EmptyRow cols={8}>{loading ? "Loading customers…" : search ? "No matching customers found." : 'No customers yet. Click "+ Add Customer" to start.'}</EmptyRow>}
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
-      {/* Add Client Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <form
-            onSubmit={handleCreateCustomer}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 w-full max-w-lg shadow-elevated space-y-4 max-h-[85vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Register Corporate Client Account
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="text-zinc-400 hover:text-zinc-700"
+      {/* Add / edit */}
+      <Modal
+        open={!!editing}
+        wide
+        title={editing?.id ? "Edit customer" : "Add customer"}
+        onClose={() => setEditing(null)}
+        footer={
+          <>
+            <Button onClick={() => setEditing(null)}>Cancel</Button>
+            <Button variant="primary" disabled={saving} onClick={save}>
+              {saving ? "Saving…" : "Save customer"}
+            </Button>
+          </>
+        }
+      >
+        {editing && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Company name" required>
+              <input className={inputCls} autoFocus value={editing.form.companyName} onChange={set("companyName")} />
+            </Field>
+            <Field label="Contact person" required>
+              <input className={inputCls} value={editing.form.contactPerson} onChange={set("contactPerson")} />
+            </Field>
+            <Field label="Email" required>
+              <input type="email" className={inputCls} value={editing.form.email} onChange={set("email")} />
+            </Field>
+            <Field label="Phone" required>
+              <input className={inputCls} value={editing.form.phone} onChange={set("phone")} />
+            </Field>
+            <Field label="GSTIN" hint="Optional · 15 characters">
+              <input className={inputCls + " font-mono uppercase"} value={editing.form.gstin ?? ""} onChange={set("gstin")} />
+            </Field>
+            <Field label="City">
+              <input className={inputCls} value={editing.form.city ?? ""} onChange={set("city")} />
+            </Field>
+            <Field label="Address" className="sm:col-span-2">
+              <input className={inputCls} value={editing.form.address ?? ""} onChange={set("address")} />
+            </Field>
+            <Field label="State">
+              <input className={inputCls} value={editing.form.state ?? ""} onChange={set("state")} />
+            </Field>
+            <Field label="Pincode">
+              <input className={inputCls} value={editing.form.pincode ?? ""} onChange={set("pincode")} />
+            </Field>
+            <Field label="Notes" className="sm:col-span-2">
+              <textarea rows={2} className={inputCls + " h-auto py-2"} value={editing.form.notes ?? ""} onChange={set("notes")} />
+            </Field>
+          </div>
+        )}
+      </Modal>
+
+      {/* Customer detail */}
+      <Modal
+        open={!!viewing}
+        wide
+        title={viewing ? `${viewing.companyName} · ${viewing.customerCode}` : ""}
+        onClose={() => setViewing(null)}
+        footer={
+          viewing && (
+            <>
+              <Button
+                onClick={() => {
+                  setEditing({ id: viewing.id, form: pick(viewing) });
+                  setViewing(null);
+                }}
               >
-                <X className="w-5 h-5" />
-              </button>
+                <Pencil className="w-3.5 h-3.5" /> Edit
+              </Button>
+              <Link href="/orders/new">
+                <Button variant="primary">
+                  <Plus className="w-3.5 h-3.5" /> New Order
+                </Button>
+              </Link>
+            </>
+          )
+        }
+      >
+        {viewing && (
+          <>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+              <Info label="Contact" value={viewing.contactPerson} />
+              <Info label="Email" value={viewing.email} />
+              <Info label="Phone" value={viewing.phone} />
+              <Info label="GSTIN" value={viewing.gstin || "—"} />
+              <Info label="Address" value={[viewing.address, viewing.city, viewing.state, viewing.pincode].filter(Boolean).join(", ") || "—"} />
+              <Info label="Customer since" value={formatDate(viewing.createdAt)} />
             </div>
-
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="col-span-2 sm:col-span-1">
-                <label className="text-zinc-500 font-medium">Company Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. PhonePe Technologies"
-                  value={formData.companyName}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, companyName: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                />
-              </div>
-
-              <div className="col-span-2 sm:col-span-1">
-                <label className="text-zinc-500 font-medium">Contact Person *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Sameer Nigam"
-                  value={formData.contactPerson}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, contactPerson: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="text-zinc-500 font-medium">Official Email *</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="procurement@company.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="text-zinc-500 font-medium">Phone Number *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="+91 98000 00000"
-                  value={formData.phone}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label className="text-zinc-500 font-medium">GSTIN (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="29AABCP1234F1Z5"
-                  value={formData.gstin}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, gstin: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono uppercase"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label className="text-zinc-500 font-medium">Billing & Delivery Address</label>
-                <input
-                  type="text"
-                  placeholder="Office Park / Commercial Tower"
-                  value={formData.address}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="text-zinc-500 font-medium">City</label>
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="text-zinc-500 font-medium">Pincode</label>
-                <input
-                  type="text"
-                  value={formData.pincode}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, pincode: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg font-mono"
-                />
+            <div className="pt-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-500 mb-2">Orders ({viewing.orders.length})</div>
+              <div className="border border-zinc-200 rounded-md divide-y divide-zinc-100">
+                {viewing.orders.map((o) => {
+                  const st = ORDER_STAGES[o.stage] ?? ORDER_STAGES.ORDER_CONFIRMED;
+                  return (
+                    <Link key={o.id} href={`/orders/${o.id}`} className="flex items-center justify-between gap-3 px-3 py-2 text-xs hover:bg-zinc-50">
+                      <span className="font-mono font-medium">{o.orderNumber}</span>
+                      <Badge className={cn(st.bg, st.text, st.border)}>{st.label}</Badge>
+                      <span className="text-zinc-500">{formatDate(o.createdAt)}</span>
+                      <span className="font-mono font-medium">{formatCurrency(o.totalAmount)}</span>
+                    </Link>
+                  );
+                })}
+                {viewing.orders.length === 0 && <div className="px-3 py-3 text-xs text-zinc-500">No orders yet.</div>}
               </div>
             </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-xs font-medium text-zinc-600 hover:text-zinc-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm"
-              >
-                {saving ? "Registering..." : "Save Account"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
 
+function pick(c: Customer): Form {
+  return {
+    companyName: c.companyName,
+    contactPerson: c.contactPerson,
+    email: c.email,
+    phone: c.phone,
+    gstin: c.gstin ?? "",
+    address: c.address ?? "",
+    city: c.city ?? "",
+    state: c.state ?? "",
+    pincode: c.pincode ?? "",
+    notes: c.notes ?? "",
+  };
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="py-1">
+      <div className="text-[10px] text-zinc-500">{label}</div>
+      <div className="text-zinc-900">{value}</div>
+    </div>
+  );
+}

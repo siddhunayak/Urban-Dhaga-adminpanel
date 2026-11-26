@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateNextOrderNumbers } from "@/lib/sequence";
+import { getSessionUser } from "@/lib/auth-server";
 
 export async function GET(request: Request) {
   try {
@@ -53,9 +54,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const items = Array.isArray(body.items)
+      ? body.items.filter((it: { productName?: string }) => it?.productName?.trim())
+      : [];
+    if (items.length === 0) {
+      return NextResponse.json({ error: "Add at least one line item" }, { status: 400 });
+    }
+
+    let customerId: string | null = null;
+    if (body.customerId) {
+      const customer = await prisma.customer.findUnique({ where: { id: body.customerId } });
+      if (!customer) {
+        return NextResponse.json({ error: "Selected customer no longer exists" }, { status: 400 });
+      }
+      customerId = customer.id;
+    }
+
+    const session = await getSessionUser();
     const { orderNumber, jobSheetNumber } = await generateNextOrderNumbers();
 
-    const items = body.items || [];
     let calculatedTotal = 0;
 
     const formattedItems = items.map((it: {
@@ -83,12 +100,16 @@ export async function POST(request: Request) {
     });
 
     const totalAmount = Number(body.totalAmount) || calculatedTotal;
-    const advancePaid = Number(body.advancePaid) || 0;
+    if (totalAmount <= 0) {
+      return NextResponse.json({ error: "Order total must be greater than zero" }, { status: 400 });
+    }
+    const advancePaid = Math.min(totalAmount, Math.max(0, Number(body.advancePaid) || 0));
     const balanceDue = Math.max(0, totalAmount - advancePaid);
 
     const order = await prisma.order.create({
       data: {
         orderNumber,
+        customerId,
         companyName: body.companyName.trim(),
         contactPerson: body.contactPerson.trim(),
         contactEmail: body.contactEmail?.trim() || "orders@urbandhaga.com",
@@ -131,7 +152,7 @@ export async function POST(request: Request) {
         entityId: order.id,
         action: "CREATED",
         description: `Order ${orderNumber} created for ${order.companyName}`,
-        performedBy: "Admin",
+        performedBy: session?.name || "Admin",
       },
     });
 
