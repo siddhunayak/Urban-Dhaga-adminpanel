@@ -155,6 +155,7 @@ model QuotationItem {
 model Order {
   id                 String           @id @default(uuid())
   orderNumber        String           @unique // e.g. UD-ORD-2026-012
+  invoiceNumber      String?          @unique // e.g. UD-INV-2026-012
   quotationId        String?          @unique
   quotation          Quotation?       @relation(fields: [quotationId], references: [id])
   customerId         String?
@@ -168,18 +169,34 @@ model Order {
   priority           String           @default("NORMAL") // NORMAL, HIGH, URGENT
   targetDeliveryDate DateTime
   actualDeliveryDate DateTime?
+  gstRate            Float            @default(5.0)
+  taxType            String           @default("CGST_SGST") // CGST_SGST, IGST
   totalAmount        Float
   advancePaid        Float            @default(0)
   balanceDue         Float            @default(0)
   paymentStatus      String           @default("PENDING") // PENDING, PARTIAL_PAID, FULLY_PAID
-  jobSheetNumber     String?
+  jobSheetNumber     String?          @unique
   notes              String?
   items              OrderItem[]
   mockups            OrderMockup[]
+  payments           Payment[]
   qualityCheck       QualityCheck?
   shipment           ShipmentDetails?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
+}
+
+model Payment {
+  id         String   @id @default(uuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount     Float
+  method     String   @default("NEFT") // UPI, NEFT, RTGS, CARD, CASH, CHEQUE
+  reference  String?
+  notes      String?
+  recordedBy String   @default("Accounts")
+  paidAt     DateTime @default(now())
+  createdAt  DateTime @default(now())
 }
 
 model OrderItem {

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorize } from "@/lib/auth-server";
 
 export async function GET(request: Request) {
+  const auth = await authorize("invoices:read");
+  if (!auth.ok) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const paymentStatus = searchParams.get("paymentStatus");
@@ -18,6 +22,7 @@ export async function GET(request: Request) {
     if (search) {
       where.OR = [
         { orderNumber: { contains: search } },
+        { invoiceNumber: { contains: search } },
         { companyName: { contains: search } },
         { contactPerson: { contains: search } },
       ];
@@ -27,6 +32,7 @@ export async function GET(request: Request) {
       where,
       include: {
         items: true,
+        payments: { orderBy: { paidAt: "desc" } },
         customer: {
           select: { gstin: true, customerCode: true },
         },
@@ -39,15 +45,15 @@ export async function GET(request: Request) {
 
     const invoices = orders.map((o) => ({
       id: o.id,
-      invoiceNumber: o.orderNumber.replace("UD-ORD-", "UD-INV-"),
+      invoiceNumber: o.invoiceNumber || o.orderNumber.replace("UD-ORD-", "UD-INV-"),
       orderNumber: o.orderNumber,
       companyName: o.companyName,
       contactPerson: o.contactPerson,
       contactPhone: o.contactPhone,
       shippingAddress: o.shippingAddress,
       clientGstin: o.customer?.gstin || null,
-      gstRate: o.quotation?.gstRate || 5.0,
-      taxType: o.quotation?.taxType || "CGST_SGST",
+      gstRate: o.quotation?.gstRate ?? o.gstRate ?? 5.0,
+      taxType: o.quotation?.taxType ?? o.taxType ?? "CGST_SGST",
       stage: o.stage,
       totalAmount: o.totalAmount,
       advancePaid: o.advancePaid,
@@ -55,6 +61,7 @@ export async function GET(request: Request) {
       paymentStatus: o.paymentStatus,
       createdAt: o.createdAt,
       items: o.items,
+      payments: o.payments,
     }));
 
     return NextResponse.json(invoices);

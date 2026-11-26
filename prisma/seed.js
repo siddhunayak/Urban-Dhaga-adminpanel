@@ -14,6 +14,7 @@ async function main() {
 
   // 1. Clean existing records safely
   await prisma.activityLog.deleteMany();
+  await prisma.payment.deleteMany();
   await prisma.qualityCheck.deleteMany();
   await prisma.shipmentDetails.deleteMany();
   await prisma.orderMockup.deleteMany();
@@ -539,6 +540,7 @@ async function main() {
   const order1 = await prisma.order.create({
     data: {
       orderNumber: "UD-ORD-2026-0014",
+      invoiceNumber: "UD-INV-2026-0014",
       customerId: custSwiggy.id,
       companyName: "Bundl Technologies (Swiggy)",
       contactPerson: "Rahul Narayanan",
@@ -548,12 +550,25 @@ async function main() {
       stage: "IN_PRODUCTION",
       priority: "HIGH",
       targetDeliveryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      gstRate: 5.0,
+      taxType: "CGST_SGST",
       totalAmount: 756000,
       advancePaid: 378000,
       balanceDue: 378000,
       paymentStatus: "PARTIAL_PAID",
       jobSheetNumber: "JS-2026-0088",
       notes: "Swiggy Tech Summit 2026. All items must be individual polybag packed with size sticker.",
+      payments: {
+        create: [
+          {
+            amount: 378000,
+            method: "NEFT",
+            reference: "HDFCN2600984122",
+            notes: "50% Production Advance",
+            recordedBy: "Meera Sen",
+          },
+        ],
+      },
       items: {
         create: [
           {
@@ -612,6 +627,7 @@ async function main() {
   const order2 = await prisma.order.create({
     data: {
       orderNumber: "UD-ORD-2026-0015",
+      invoiceNumber: "UD-INV-2026-0015",
       quotationId: quote1.id,
       customerId: custCRED.id,
       companyName: "Dreamplug Technologies (CRED)",
@@ -622,12 +638,25 @@ async function main() {
       stage: "READY_FOR_DISPATCH",
       priority: "NORMAL",
       targetDeliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      gstRate: 5.0,
+      taxType: "CGST_SGST",
       totalAmount: 130725,
       advancePaid: 65362,
       balanceDue: 65363,
       paymentStatus: "PARTIAL_PAID",
       jobSheetNumber: "JS-2026-0089",
       notes: "Ready for courier pickup. Master carton labeled.",
+      payments: {
+        create: [
+          {
+            amount: 65362,
+            method: "UPI",
+            reference: "UTR41982044192",
+            notes: "50% Advance on Quote Approval",
+            recordedBy: "Meera Sen",
+          },
+        ],
+      },
       items: {
         create: [
           {
@@ -672,6 +701,7 @@ async function main() {
   const order3 = await prisma.order.create({
     data: {
       orderNumber: "UD-ORD-2026-0016",
+      invoiceNumber: "UD-INV-2026-0016",
       customerId: custPostman.id,
       companyName: "Postman Inc",
       contactPerson: "Sneha Kapadia",
@@ -681,12 +711,32 @@ async function main() {
       stage: "DISPATCHED",
       priority: "URGENT",
       targetDeliveryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+      gstRate: 18.0,
+      taxType: "IGST",
       totalAmount: 362500,
       advancePaid: 362500,
       balanceDue: 0,
       paymentStatus: "FULLY_PAID",
       jobSheetNumber: "JS-2026-0082",
       notes: "Delivered to Mumbai office. Conference event on Friday.",
+      payments: {
+        create: [
+          {
+            amount: 181250,
+            method: "NEFT",
+            reference: "ICICN260011223",
+            notes: "50% Advance",
+            recordedBy: "Meera Sen",
+          },
+          {
+            amount: 181250,
+            method: "RTGS",
+            reference: "ICICR260044556",
+            notes: "50% Balance before dispatch",
+            recordedBy: "Meera Sen",
+          },
+        ],
+      },
       items: {
         create: [
           {

@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { generateNextCustomerCode } from "@/lib/sequence";
+import { authorize } from "@/lib/auth-server";
+import { generateNextCustomerCode, runTxWithRetry } from "@/lib/sequence";
+import { EMAIL_RE, GSTIN_RE, parseJsonBody } from "@/lib/validators";
 
 export async function GET(request: Request) {
+  const auth = await authorize("customers:read");
+  if (!auth.ok) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
@@ -35,31 +40,70 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const auth = await authorize("customers:write");
+  if (!auth.ok) return auth.response;
+
+  const parsed = await parseJsonBody<Record<string, unknown>>(request);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+
+  const companyName = typeof body.companyName === "string" ? body.companyName.trim() : "";
+  const contactPerson = typeof body.contactPerson === "string" ? body.contactPerson.trim() : "";
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+
+  if (!companyName || !contactPerson || !email || !phone) {
+    return NextResponse.json(
+      { error: "Company name, contact person, email, and phone are required" },
+      { status: 400 }
+    );
+  }
+  if (!EMAIL_RE.test(email)) {
+    return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
+  }
+
+  const gstin =
+    typeof body.gstin === "string" && body.gstin.trim()
+      ? body.gstin.trim().toUpperCase()
+      : null;
+  if (gstin && !GSTIN_RE.test(gstin)) {
+    return NextResponse.json(
+      { error: "GSTIN must be 15 characters (e.g. 29ABCDE1234F1Z5)" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const body = await request.json();
-    if (!body.companyName || !body.contactPerson || !body.email || !body.phone) {
-      return NextResponse.json(
-        { error: "Company name, contact person, email, and phone are required" },
-        { status: 400 }
-      );
-    }
+    const customer = await runTxWithRetry(async (tx) => {
+      const customerCode = await generateNextCustomerCode(tx);
 
-    const customerCode = await generateNextCustomerCode();
+      const created = await tx.customer.create({
+        data: {
+          customerCode,
+          companyName,
+          contactPerson,
+          email,
+          phone,
+          gstin,
+          address: typeof body.address === "string" && body.address.trim() ? body.address.trim() : null,
+          city: typeof body.city === "string" && body.city.trim() ? body.city.trim() : null,
+          state: typeof body.state === "string" && body.state.trim() ? body.state.trim() : "Karnataka",
+          pincode: typeof body.pincode === "string" && body.pincode.trim() ? body.pincode.trim() : null,
+          notes: typeof body.notes === "string" && body.notes.trim() ? body.notes.trim() : null,
+        },
+      });
 
-    const customer = await prisma.customer.create({
-      data: {
-        customerCode,
-        companyName: body.companyName.trim(),
-        contactPerson: body.contactPerson.trim(),
-        email: body.email.trim(),
-        phone: body.phone.trim(),
-        gstin: body.gstin ? body.gstin.trim().toUpperCase() : null,
-        address: body.address || null,
-        city: body.city || null,
-        state: body.state || "Karnataka",
-        pincode: body.pincode || null,
-        notes: body.notes || null,
-      },
+      await tx.activityLog.create({
+        data: {
+          entityType: "CUSTOMER",
+          entityId: created.id,
+          action: "CREATED",
+          description: `Customer ${created.customerCode} (${created.companyName}) registered`,
+          performedBy: auth.user.name,
+        },
+      });
+
+      return created;
     });
 
     return NextResponse.json(customer, { status: 201 });
@@ -68,4 +112,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create customer" }, { status: 500 });
   }
 }
-

@@ -38,6 +38,8 @@ export default function PaymentsPage() {
   const [status, setStatus] = useState("ALL");
   const [paying, setPaying] = useState<Invoice | null>(null);
   const [amount, setAmount] = useState(0);
+  const [method, setMethod] = useState("NEFT");
+  const [reference, setReference] = useState("");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -82,6 +84,8 @@ export default function PaymentsPage() {
   const openPay = (r: Invoice) => {
     setPaying(r);
     setAmount(r.balanceDue);
+    setMethod("NEFT");
+    setReference("");
   };
 
   const recordPayment = async () => {
@@ -90,10 +94,14 @@ export default function PaymentsPage() {
     if (amount > paying.balanceDue) return toast.error(`Amount is more than the balance (${formatCurrency(paying.balanceDue)})`);
     setSaving(true);
     try {
-      const res = await fetch(`/api/orders/${paying.id}`, {
-        method: "PATCH",
+      const res = await fetch(`/api/orders/${paying.id}/payments`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ advancePaid: paying.advancePaid + amount }),
+        body: JSON.stringify({
+          amount,
+          method,
+          reference: reference.trim() || undefined,
+        }),
       });
       if (!res.ok) throw new Error(await apiError(res, "Couldn't record payment"));
       toast.success(`Recorded ${formatCurrency(amount)} against ${paying.orderNumber}`);
@@ -237,6 +245,21 @@ export default function PaymentsPage() {
             <Field label="Amount received (₹)">
               <input type="number" min={1} autoFocus className={inputCls + " font-mono"} value={amount} onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))} />
             </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Method">
+                <select className={selectCls + " w-full"} value={method} onChange={(e) => setMethod(e.target.value)}>
+                  <option value="NEFT">NEFT</option>
+                  <option value="UPI">UPI</option>
+                  <option value="RTGS">RTGS</option>
+                  <option value="CARD">Card</option>
+                  <option value="CASH">Cash</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
+              </Field>
+              <Field label="UTR / Reference">
+                <input className={inputCls + " font-mono"} placeholder="Optional" value={reference} onChange={(e) => setReference(e.target.value)} />
+              </Field>
+            </div>
             <div className="flex gap-2">
               <Button onClick={() => setAmount(Math.round(paying.balanceDue / 2))}>50%</Button>
               <Button onClick={() => setAmount(paying.balanceDue)}>Full balance</Button>

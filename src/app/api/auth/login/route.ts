@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { createSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
+import { parseJsonBody } from "@/lib/validators";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const email = (body.email || "").trim().toLowerCase();
-    const password = body.password || "";
+    const parsed = await parseJsonBody<{ email?: string; password?: string }>(request);
+    if (!parsed.ok) return parsed.response;
+
+    const email = (parsed.data.email || "").trim().toLowerCase();
+    const password = parsed.data.password || "";
 
     if (!email || !password) {
       return NextResponse.json(

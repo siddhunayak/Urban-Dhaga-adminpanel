@@ -53,6 +53,15 @@ interface Order {
     customizationDetails?: string | null;
   }[];
   mockups: Mockup[];
+  payments?: {
+    id: string;
+    amount: number;
+    method: string;
+    reference?: string | null;
+    notes?: string | null;
+    recordedBy: string;
+    paidAt: string;
+  }[];
   qualityCheck?: {
     fabricQualityChecked: boolean;
     printFidelityChecked: boolean;
@@ -133,6 +142,8 @@ export default function OrderDetailPage() {
 
   // Section form state
   const [payAmount, setPayAmount] = useState(0);
+  const [payMethod, setPayMethod] = useState("NEFT");
+  const [payReference, setPayReference] = useState("");
   const [payOpen, setPayOpen] = useState(false);
   const [mockupForm, setMockupForm] = useState({ title: "", fileUrl: "" });
   const [feedback, setFeedback] = useState<{ mockup: Mockup; text: string } | null>(null);
@@ -260,12 +271,18 @@ export default function OrderDetailPage() {
     if (payAmount <= 0) return toast.error("Enter an amount");
     if (payAmount > o.balanceDue) return toast.error(`Amount is more than the balance (${formatCurrency(o.balanceDue)})`);
     const ok = await run(
-      () => send(`/api/orders/${id}`, "PATCH", { advancePaid: o.advancePaid + payAmount }),
+      () =>
+        send(`/api/orders/${id}/payments`, "POST", {
+          amount: payAmount,
+          method: payMethod,
+          reference: payReference.trim() || undefined,
+        }),
       `Recorded ${formatCurrency(payAmount)}`
     );
     if (ok) {
       setPayOpen(false);
       setPayAmount(0);
+      setPayReference("");
     }
   };
 
@@ -303,17 +320,16 @@ export default function OrderDetailPage() {
   const saveShipment = () => {
     if (!ship.trackingNumber.trim()) return toast.error("Enter the AWB / tracking number");
     const firstDispatch = !o.shipment && o.stage === "READY_FOR_DISPATCH";
-    return run(async () => {
-      await send(`/api/orders/${id}/shipment`, "POST", {
-        ...ship,
-        totalWeightKg: ship.totalWeightKg || undefined,
-        estimatedDelivery: ship.estimatedDelivery || undefined,
-        advanceStage: firstDispatch,
-      });
-      if (ship.status === "DELIVERED" && o.stage !== "DELIVERED") {
-        await send(`/api/orders/${id}`, "PATCH", { stage: "DELIVERED" });
-      }
-    }, firstDispatch ? "Dispatched" : "Shipment saved");
+    return run(
+      () =>
+        send(`/api/orders/${id}/shipment`, "POST", {
+          ...ship,
+          totalWeightKg: ship.totalWeightKg || undefined,
+          estimatedDelivery: ship.estimatedDelivery || undefined,
+          advanceStage: firstDispatch,
+        }),
+      ship.status === "DELIVERED" ? "Delivered" : firstDispatch ? "Dispatched" : "Shipment saved"
+    );
   };
 
   const saveDetails = () =>
@@ -651,6 +667,21 @@ export default function OrderDetailPage() {
               <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden mt-2">
                 <div className="h-full bg-emerald-600" style={{ width: `${o.totalAmount ? Math.min(100, (o.advancePaid / o.totalAmount) * 100) : 0}%` }} />
               </div>
+              {o.payments && o.payments.length > 0 && (
+                <div className="pt-3 mt-3 border-t border-zinc-100 space-y-1.5">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-zinc-500">Payment history</div>
+                  {o.payments.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between text-[11px] text-zinc-700">
+                      <span>
+                        {p.method}
+                        {p.reference ? ` · ${p.reference}` : ""}
+                        <span className="text-zinc-400"> · {formatDate(p.paidAt)}</span>
+                      </span>
+                      <span className="font-mono font-medium text-emerald-700">{formatCurrency(p.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
 
@@ -757,6 +788,21 @@ export default function OrderDetailPage() {
         <Field label="Amount received (₹)">
           <input type="number" min={1} max={o.balanceDue} autoFocus className={inputCls + " font-mono"} value={payAmount} onChange={(e) => setPayAmount(Math.max(0, Number(e.target.value)))} />
         </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Method">
+            <select className={selectCls + " w-full"} value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
+              <option value="NEFT">NEFT</option>
+              <option value="UPI">UPI</option>
+              <option value="RTGS">RTGS</option>
+              <option value="CARD">Card</option>
+              <option value="CASH">Cash</option>
+              <option value="CHEQUE">Cheque</option>
+            </select>
+          </Field>
+          <Field label="UTR / Reference">
+            <input className={inputCls + " font-mono"} placeholder="Optional" value={payReference} onChange={(e) => setPayReference(e.target.value)} />
+          </Field>
+        </div>
         <div className="flex gap-2">
           <Button onClick={() => setPayAmount(Math.round(o.balanceDue / 2))}>50%</Button>
           <Button onClick={() => setPayAmount(o.balanceDue)}>Full balance</Button>

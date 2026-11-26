@@ -341,11 +341,12 @@ export default function ProductionPage() {
           packagingChecked: qcState.packaging,
           inspectedBy: qcState.inspectedBy,
           remarks: qcState.remarks,
-          autoAdvanceStage: true,
+          autoAdvanceStage: selectedOrder.stage === "QUALITY_CHECK",
         }),
       });
       if (!res.ok) {
-        toast.error("Failed to save QC audit");
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Failed to save QC audit");
         return;
       }
       const saved = await res.json();
@@ -380,11 +381,12 @@ export default function ProductionPage() {
           packageCount: shipmentState.packageCount,
           totalWeightKg: shipmentState.totalWeightKg,
           status: shipmentState.status,
-          advanceStage: true,
+          advanceStage: selectedOrder.stage === "READY_FOR_DISPATCH",
         }),
       });
       if (!res.ok) {
-        toast.error("Failed to book shipment");
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Failed to book shipment");
         return;
       }
       toast.success(`Dispatched via ${shipmentState.courierPartner}`);

@@ -10,11 +10,12 @@ export interface SessionPayload {
 export const SESSION_COOKIE_NAME = "ud_session";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
-function getSecret(): string {
-  const secret = process.env.AUTH_SECRET;
+function getSecret(): string | null {
+  const secret = process.env.AUTH_SECRET || process.env.SESSION_SECRET;
   if (secret && secret.length >= 16) return secret;
   if (process.env.NODE_ENV === "production") {
-    console.warn("WARNING: AUTH_SECRET env var is not configured. Using fallback key.");
+    console.error("CRITICAL: AUTH_SECRET (or SESSION_SECRET) >= 16 chars must be configured in production.");
+    return null;
   }
   return "urban-dhaga-dev-fallback-key-2026";
 }
@@ -38,11 +39,11 @@ function fromBase64Url(str: string): Uint8Array {
   return bytes;
 }
 
-async function getHmacKey(): Promise<CryptoKey> {
+async function getHmacKey(secret: string): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   return crypto.subtle.importKey(
     "raw",
-    encoder.encode(getSecret()),
+    encoder.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign", "verify"]
@@ -52,12 +53,16 @@ async function getHmacKey(): Promise<CryptoKey> {
 export async function createSessionToken(
   user: Omit<SessionPayload, "exp">
 ): Promise<string> {
+  const secret = getSecret();
+  if (!secret) {
+    throw new Error("AUTH_SECRET is not configured");
+  }
   const payload: SessionPayload = {
     ...user,
     exp: Date.now() + SESSION_DURATION_MS,
   };
   const encoded = toBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
-  const key = await getHmacKey();
+  const key = await getHmacKey(secret);
   const sigBuffer = await crypto.subtle.sign(
     "HMAC",
     key,
@@ -71,6 +76,9 @@ export async function verifySessionToken(
   token: string | undefined | null
 ): Promise<SessionPayload | null> {
   if (!token) return null;
+  const secret = getSecret();
+  if (!secret) return null;
+
   const parts = token.split(".");
   if (parts.length !== 2) return null;
 
@@ -78,7 +86,7 @@ export async function verifySessionToken(
   if (!encoded || !sig) return null;
 
   try {
-    const key = await getHmacKey();
+    const key = await getHmacKey(secret);
     const sigBytes = fromBase64Url(sig);
     const sigBuffer = new ArrayBuffer(sigBytes.length);
     new Uint8Array(sigBuffer).set(sigBytes);

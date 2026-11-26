@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout", "/api/health"];
+const PUBLIC_EXACT_PATHS = new Set([
+  "/login",
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/api/health",
+]);
+
+const STATIC_EXT_RE = /\.(?:ico|png|jpg|jpeg|svg|webp|gif|css|js|map|woff2?|ttf)$/i;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -10,7 +17,17 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
-    pathname.includes(".")
+    (!pathname.startsWith("/api/") && STATIC_EXT_RE.test(pathname))
+  ) {
+    return NextResponse.next();
+  }
+
+  // Allow webhook lead ingestion into route handler only when header is present;
+  // route handler verifies the shared secret with timing-safe comparison.
+  if (
+    pathname === "/api/leads" &&
+    request.method === "POST" &&
+    request.headers.has("x-webhook-secret")
   ) {
     return NextResponse.next();
   }
@@ -25,7 +42,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (PUBLIC_EXACT_PATHS.has(pathname)) {
     return NextResponse.next();
   }
 
